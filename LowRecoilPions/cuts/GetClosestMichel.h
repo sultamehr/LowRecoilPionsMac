@@ -8,16 +8,22 @@ template <class UNIVERSE, class EVENT>
 class GetClosestMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
 {
  public:
-    GetClosestMichel(): PlotUtils::Cut<UNIVERSE, EVENT>("Getting Closest Michel")
+    GetClosestMichel(const int michelgroup): PlotUtils::Cut<UNIVERSE, EVENT>("Getting Closest Michel for Michel Group " + std::to_string(michelgroup))
     {
     }
+    //michel group means getting Closest Michel in selection (evt.m_nmichelspass) or sideband group (m_sidebandpass)
 
   private:
     using Michel = typename std::remove_reference<decltype(std::declval<EVENT>().m_nmichels.front())>::type;
-
+    int michelgroup;
     bool checkCut(const UNIVERSE& univ, EVENT& evt) const
     {
+    
+      // evt.m_nmichels.clear();
+      //if (michelgroup == 0) evt.m_nmichels = evt.m_nmichelspass;
+      //else if (michelgroup == 1) evt.m_nmichels = evt.m_sidebandpass;  
       int nmichels = evt.m_nmichels.size();
+     
       evt.m_bestdist = 9999.; // setting some default value for best distance
       std::vector<double> allmichel3Ddist;
       for (int i = 0; i < nmichels; ++i)
@@ -74,7 +80,8 @@ class GetClosestMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
        evt.pT_reco = univ.GetMuonPT();
        evt.q3_reco = univ.Getq3();
        evt.eavail_reco = univ.GetEavail();  
-       return !evt.m_nmichels.empty();
+       return true;       
+       //return !evt.m_nmichels.empty();
     };
 
 };

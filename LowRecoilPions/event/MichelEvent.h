@@ -16,6 +16,8 @@ struct MichelEvent {
     std::vector<Michel> m_nmichels; //nmatched michels
     std::vector<Michel> m_ntruepiparents; // michels with true pion parent 
     std::vector<Michel> m_nmichelspass; // if some distance cut is applied, we can store the michels that passed for this event in here
+    std::vector<Michel> m_sidebandpass;
+    std::vector<Michel> m_allmichels; // All Michels after the hasMichel Cut
     double best_x = 9999.;
     double best_y = 9999.;
     double best_z = 9999.;
@@ -29,6 +31,7 @@ struct MichelEvent {
     double eavail_reco = 9999.;//MeV
     double q3_reco = 9999.; //GeV
     double pT_reco = 9999.; //GeV
-          
+    int sideband = 0; // if 1: event is a sideband with no signal michels      
+    int selection = 0; // if 1: event has a michel that is < 150mm in two closest views 
 };
 #endif

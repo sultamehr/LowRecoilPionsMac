@@ -198,7 +198,7 @@ Michel::Michel(const CVUniverse& univ, int ci)
   if (is_fitted == 1) { // Do theMatching for Fitted Michels
        DoesMichelMatchVtx(univ); //GEts info for Vtx Match
        DoesMichelMatchClus(univ); // Gets info for ClusterMatch
-       GetBestMatch();     
+       //GetBestMatch();     
        GetPionAngle(univ);
   }
 

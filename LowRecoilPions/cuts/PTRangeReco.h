@@ -21,7 +21,7 @@ class PTRangeReco: public PlotUtils::Cut<CVUniverse, EVENT>
     bool checkCut(const CVUniverse& univ, EVENT&) const
     {
       const double pTreco = univ.GetMuonPT();
-      return pTreco > fpTmin && pTreco <= fpTmax; 
+      return (pTreco > fpTmin) && (pTreco <= fpTmax); 
     }
 
 };

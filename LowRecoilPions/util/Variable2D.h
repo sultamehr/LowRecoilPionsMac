@@ -39,7 +39,15 @@ class Variable2D: public PlotUtils::Variable2DBase<CVUniverse>
       efficiencyNumerator = new Hist((GetNameX() + "_" + GetNameY() + "_efficiency_numerator").c_str(), GetName().c_str(), GetBinVecX(), GetBinVecY(), mc_error_bands);
       efficiencyDenominator = new Hist((GetNameX() + "_" + GetNameY() + "_efficiency_denominator").c_str(), GetName().c_str(), GetBinVecX(), GetBinVecY(), truth_error_bands);
       fSignalByPionsInVar = new util::Categorized<Hist, FSCategory*>(pionFSCategories,GetName().c_str(),(GetName()+"_npi").c_str() , GetBinVecX(), GetBinVecY(),mc_error_bands);
+      
       mcTotalHist = new Hist((GetNameX() + "_" + GetNameY() + "_MC").c_str(), GetName().c_str(), GetBinVecX(), GetBinVecY(), mc_error_bands);
+      selectedSignalReco = new Hist((GetNameX() + "_" + GetNameY() + "_signal_reco").c_str(), GetName().c_str(), GetBinVecX(), GetBinVecY(), mc_error_bands);
+
+      std::vector<double> truediffbins;
+      const double diffBinWidth = 25; //MeV
+      for(int whichBin = 0; whichBin < 600 + 1; ++whichBin) truediffbins.push_back(-3000+diffBinWidth * whichBin);
+      recoMinusTrueTBins = new Hist((GetNameX() + "_" + GetNameY() + "_recoMinusTrueTBins").c_str(), GetName().c_str(), truediffbins, GetBinVecY(), mc_error_bands);
+      recoMinusTrueRBins = new Hist((GetNameX() + "_" + GetNameY() + "_recoMinusTrueRBins").c_str(), GetName().c_str(), truediffbins, GetBinVecY(), mc_error_bands);
     }
 
     //Histograms to be filled
@@ -50,7 +58,9 @@ class Variable2D: public PlotUtils::Variable2DBase<CVUniverse>
     Hist* efficiencyDenominator;
     util::Categorized<Hist, FSCategory*>* fSignalByPionsInVar; 
     Hist* mcTotalHist;
-
+    Hist* recoMinusTrueTBins;
+    Hist* recoMinusTrueRBins;
+    Hist* selectedSignalReco;
     void InitializeDATAHists(std::vector<CVUniverse*>& data_error_bands)
     {
         const char* name = GetName().c_str();
@@ -85,10 +95,22 @@ class Variable2D: public PlotUtils::Variable2DBase<CVUniverse>
       }
 
       if (mcTotalHist->hist) {
-                dataHist->hist->SetDirectory(&file);
-                dataHist->hist->Write();
+                mcTotalHist->hist->SetDirectory(&file);
+                mcTotalHist->hist->Write();
       }
-      if(efficiencyNumerator)
+      if (selectedSignalReco->hist) {
+                selectedSignalReco->hist->SetDirectory(&file);
+                selectedSignalReco->hist->Write();
+      }
+      if (recoMinusTrueTBins->hist) {
+                recoMinusTrueTBins->hist->SetDirectory(&file);
+                recoMinusTrueTBins->hist->Write();
+      }
+      if (recoMinusTrueRBins->hist) {
+                recoMinusTrueRBins->hist->SetDirectory(&file);
+                recoMinusTrueRBins->hist->Write();
+      } 
+     if(efficiencyNumerator)
       {
         efficiencyNumerator->hist->SetDirectory(&file); //TODO: Can I get around having to call SetDirectory() this many times somehow?
         efficiencyNumerator->hist->Write();
@@ -108,12 +130,15 @@ class Variable2D: public PlotUtils::Variable2DBase<CVUniverse>
     void SyncCVHistos()
     {
       m_MChists->visit([](Hist& categ) { categ.SyncCVHistos(); });
+      if(selectedSignalReco) selectedSignalReco->SyncCVHistos();
       fSignalByPionsInVar->visit([](auto& Hist) {Hist.SyncCVHistos();});
       m_backgroundHists->visit([](Hist& categ) { categ.SyncCVHistos(); });
       if(mcTotalHist) mcTotalHist->SyncCVHistos();
       if(dataHist) dataHist->SyncCVHistos();
       if(efficiencyNumerator) efficiencyNumerator->SyncCVHistos();
       if(efficiencyDenominator) efficiencyDenominator->SyncCVHistos();
+      if(recoMinusTrueTBins) recoMinusTrueTBins->SyncCVHistos();
+      if(recoMinusTrueRBins) recoMinusTrueRBins->SyncCVHistos();
     }
     
     void FillCategHistos(const CVUniverse& univ, double varx, double vary, const double weight)

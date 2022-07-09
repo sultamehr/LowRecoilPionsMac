@@ -40,10 +40,10 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   static constexpr double M_n = 939.56536;
   static constexpr double M_p = 938.272013;
   static constexpr double M_nucleon = (1.5*M_n+M_p)/2.5;
-  static constexpr double M_mu = 105.6583;
+  static constexpr double M_mu = 105.6583/1000.; //Converting to GeV
   static constexpr int PDG_n = 2112;
   static constexpr int PDG_p = 2212;
-
+  static constexpr double M_pi = 139.57039; //in MeV
   // ========================================================================
   // Write a "Get" function for all quantities access by your analysis.
   // For composite quantities (e.g. Enu) use a calculator function.
@@ -65,6 +65,20 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   double GetTrueQ2GeV() const
   {
         return GetQ2True()/pow(10, 6);
+  }
+
+  double GetTrueQ2MeV() const
+  {
+        return GetQ2True();
+  }
+
+  double GetTrueQ0GeV() const
+  {
+        return Getq0True()/pow(10,3);
+  }
+  double GetTrueQ0() const
+  {     
+        return Getq0True();
   }
 
   //Muon kinematics
@@ -145,40 +159,108 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   //      so that we get the right neutrino energy in an inclusive sample.  So,
   //      this function could be correcting for neutron energy which Eavail should
   //      not do.
+  
+  double GetEavailCorr() const {
+       return GetEAvailable();
+  }  
+
   virtual double GetEavail() const {
-    double eavail = GetDouble("MasterAnaDev_recoil_E");
+    //double eavail = GetDouble("recoil_energy_nonmuon_vtx0mm"); //Dan's MEC equivalent eavail defined by all clusters within the ID/ECal within [-20,35]ns of the interaction vertex. The clusters searched are all clusters which are not on the muon or added to the muon via the MuonFuzz tool. The MuonFuzz tool configuration uses default values.
+    //double eavail = GetDouble("MasterAnaDev_visible_E");
+    //std::cout << "Printing visible ENERGY Eavail: " << eavail << std::endl;
+    //double eavail = GetDouble("MasterAnaDev_recoil_E");
     //double eavail = GetVecElem("recoil_summed_energy", 0);
-    return eavail;
+    //double ecal = GetDouble("blob_recoil_E_ecal");
+    //double hcal = GetDouble("blob_recoil_E_hcal");
+    //double tracker = GetDouble("blob_recoil_E_tracker");
+    //double od = GetDouble("blob_recoil_E_od");
+    //return (ecal+hcal+tracker+od); //Get these in MeV
+    return GetEAvailable();
+    //return eavail;
     //return GetEAvailable();
    }
- 
-  virtual double GetMECEavail() const {
-    double eavail = GetDouble("MasterAnaDev_recoil_E");
+  
+  virtual double GetRecoilECorr() const {
+    double eavail = GetEAvailable() + M_pi;///GetDouble("recoil_E_nopolyline");
+    return eavail;
+    //if (eavail < 400.) return 50.+1.7*eavail;
+    //if (eavail > 400.) return 1.7*eavail;
+  } 
+  virtual double GetRecoilE() const {
+    double eavail = GetEAvailable()+M_pi; //GetDouble("recoil_E_nopolyline");
     return eavail;
   }
-
+  
   virtual double GetEHad() const {
-    return GetDouble("MasterAnaDev_hadron_recoil");
+    return GetDouble("MasterAnaDev_hadron_recoil_CCInc");
   
   }
-  
+
+  virtual double Recoq3pTdiff() const{
+     double q3 = Getq3();
+     double pT = GetMuonPT(); 
+     return sqrt( (q3*q3) - (pT*pT));
+
+  }
+
+  virtual double GetTrueq3pTdiff() const {
+     double q3 = GetTrueQ3();
+     double pT =  GetMuonPTTrue(); 
+     return sqrt( (q3*q3) - (pT*pT));
+
+  }
+  /*
+  virtual double GetRecoilESum() const {
+     double ecal = GetDouble("blob_recoil_E_ecal");
+     double hcal = GetDouble("blob_recoil_E_hcal");
+     double tracker = GetDouble("blob_recoil_E_tracker");
+     double od = GetDouble("blob_recoil_E_od");
+     return (ecal+hcal+tracker); //Get these in GeV
+  }
+
+  virtual double GetRecoilECorrSum() const {
+     //These correction values are obtained from docdb 7712
+     double ecal = 1.73*GetDouble("blob_recoil_E_ecal"); // Adding calorimetric correction for ECAL (not doing side ecal)
+     double hcal = 9.32*GetDouble("blob_recoil_E_hcal"); //Calorimetric correction for HCAL
+     double tracker = GetDouble("blob_recoil_E_tracker"); // Calorimetric correction for tracker
+     double od = 9.32*GetDouble("blob_recoil_E_od"); // Calorimetric correction for OD
+     return 1.70*(ecal+hcal+tracker);
+    
+  }
+  */
+  virtual double GetRecoilESumPi() const {
+     double ecal = GetDouble("blob_recoil_E_ecal");
+     double hcal = GetDouble("blob_recoil_E_hcal");
+     double tracker = GetDouble("blob_recoil_E_tracker");
+     double od = GetDouble("blob_recoil_E_od");
+     return (ecal+hcal+tracker)/pow(10,3); //Get these in GeV
+  }
+
   virtual double GetQ2Reco() const{
-    double q2reco = GetDouble("MasterAnaDev_Q2_Inclusive")/pow(10,6);
-    //double enu = GetEmuGeV() + GetEHad();
-    //double q2reco = 2*enu*(GetEmuGeV() - (GetPmu()/1000.)*cos(GetThetamu())) - M_mu*M_mu;
+    //double q2reco = GetDouble("MasterAnaDev_Q2_Inclusive")/pow(10,6);
+    
+    double enu = GetEmuGeV() + GetRecoilE()/1000.;
+    double pmucos = (GetPmu()/1000.)*cos(GetThetamu());
+    double q2reco = 2.*enu*(GetEmuGeV() - pmucos ) - (M_mu*M_mu);
     //std::cout << "Print RecoilSummedE" << GetRecolE() <<  " Print Ehad: " << GetEHad() << " Print q2reco: " << q2reco << " Print EAvail: " << GetEavail() << std::endl;
     //double q2reco = GetDouble("qsquared_recoil");
     return q2reco;
   }
+  
+  virtual double GetQ2RecoMeV() const{
+    return GetQ2Reco()*pow(10,6);
+
+  }
 
   //GetRecoilE is designed to match the NSF validation suite
-  virtual double GetRecoilE() const {
-    return GetVecElem("recoil_summed_energy", 0);
-  }
+  //virtual double GetRecoilE() const {
+  //  return GetVecElem("recoil_summed_energy", 0);
+  //}
   
   virtual double Getq3() const{
-    double eavail = GetRecoilE()/pow(10,3);
+    double eavail = GetRecoilE()/1000.;
     double q2 = GetQ2Reco();
+    //std::cout << " Dan's EHad is " << eavail << " Q2 is " << q2 << std::endl;
     double q3mec = sqrt(eavail*eavail + q2);
     //std::cout << "Print TrueEavail: " << GetTrueEAvail() <<  " Print RecoilE: " << GetRecoilE() << " Print q2reco: " << GetQ2Reco() << " Print EAvail: " << GetEavail() << " Print q3: " << q3mec  << std::endl;
     return q3mec;
@@ -264,10 +346,30 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
       }
       return npion;
 
+ }
+
+ virtual int GetTrueLowestTpiEvent() const {
+    double tpi = 999999.;
+    int pdgsize = GetInt("mc_nFSPart");
+    for (int i = 0; i< pdgsize; i++)
+        {
+            int pdg = GetVecElem("mc_FSPartPDG", i);
+            if (pdg != 211) continue;
+	    double energy = GetVecElem("mc_FSPartE", i);
+	    double momentumx = GetVecElem("mc_FSPartPx", i);
+	    double momentumy = GetVecElem("mc_FSPartPy", i);
+	    double momentumz = GetVecElem("mc_FSPartPz", i);
+	    double momentum = sqrt(pow(momentumx, 2) + pow(momentumy, 2) + pow(momentumz, 2));
+            double pionmass = sqrt(pow(energy, 2) - pow(momentum, 2));  
+	    double KE = energy - pionmass;
+	    if (tpi > KE) tpi = KE;     
+        }
+    ///if(tpi < 99999.) std::cout << "Lowest Energy Primary Pion KE is " << tpi << std::endl;
+    return tpi;
  } 
   
-  virtual int GetNTruePions() const{
-      return GetInt("FittedMichel_all_piontrajectory_trackID_sz");
+  virtual int GetTrueNPions() const{
+      return GetInt("FittedMichel_all_piontrajectory_pdg_sz");
   }
 
   virtual int GetPionParentID(int i) const {
@@ -314,7 +416,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   } 
 
   virtual double GetTrueTpi() const {
-     int nFSpi = GetNTruePions();
+     int nFSpi = GetTrueNPions();
      double pionKE = 9999.;
      for (int i = 0; i < nFSpi; i++){
          int pdg = GetVecElem("FittedMichel_all_piontrajectory_pdg", i);

@@ -46,24 +46,36 @@ class Variable: public PlotUtils::VariableBase<CVUniverse>
                                                            GetBinVec(), mc_error_bands);
 
       fSignalByPionsInVar = new util::Categorized<Hist, FSCategory*>(pionFSCategories,GetName().c_str(),(GetName()).c_str() , GetBinVec(),mc_error_bands);
+     
+      fSideBandByPionsInVar = new util::Categorized<Hist, FSCategory*>(pionFSCategories,GetName().c_str(),(GetName()).c_str() , GetBinVec(),mc_error_bands);
+
       efficiencyNumerator = new Hist((GetName() + "_efficiency_numerator").c_str(), GetName().c_str(), GetBinVec(), mc_error_bands);
       efficiencyDenominator = new Hist((GetName() + "_efficiency_denominator").c_str(), GetName().c_str(), GetBinVec(), truth_error_bands);
       selectedSignalReco = new Hist((GetName() + "_selected_signal_reco").c_str(), GetName().c_str(), GetBinVec(), mc_error_bands);
       selectedMCReco = new Hist((GetName() + "_selected_mc_reco").c_str(), GetName().c_str(), GetBinVec(), mc_error_bands);
+      std::vector<double> truediffbins;
+      const double diffBinWidth = 25; //MeV
+      for(int whichBin = 0; whichBin < 600 + 1; ++whichBin) truediffbins.push_back(-3000.+diffBinWidth * whichBin);
+      recoMinusTrue = new Hist((GetName() + "_recoMinusTrue").c_str(), GetName().c_str(), truediffbins, mc_error_bands);
+
       migration = new PlotUtils::Hist2DWrapper<CVUniverse>((GetName() + "_migration").c_str(), GetName().c_str(), GetBinVec(), GetBinVec(), mc_error_bands);
     }
 
     //Histograms to be filled
     util::Categorized<Hist, int>* m_backgroundHists;
+    util::Categorized<Hist, int>* m_sidebandHists;
     util::Categorized<Hist, int>* m_MChists;
-     util::Categorized<Hist, FSCategory*>* fSignalByPionsInVar;
+    util::Categorized<Hist, FSCategory*>* fSignalByPionsInVar;
+    util::Categorized<Hist, FSCategory*>* fSideBandByPionsInVar;
     Hist* dataHist;
     Hist* efficiencyNumerator;
     Hist* efficiencyDenominator;
     Hist* selectedSignalReco; //Effectively "true background subtracted" distribution for warping studies.
                               //Also useful for a bakground breakdown plot that you'd use to start background subtraction studies.
     Hist* selectedMCReco; //Treat the MC CV just like data for the closure test
+    Hist* recoMinusTrue;
     PlotUtils::Hist2DWrapper<CVUniverse>* migration;
+
 
     void InitializeDATAHists(std::vector<CVUniverse*>& data_error_bands)
     {
@@ -124,11 +136,17 @@ class Variable: public PlotUtils::VariableBase<CVUniverse>
         selectedSignalReco->hist->SetDirectory(&file);
         selectedSignalReco->hist->Write();
       }
+      
+      if(recoMinusTrue)
+      {
+        recoMinusTrue->hist->SetDirectory(&file);
+        recoMinusTrue->hist->Write();
+      }
 
       if(selectedMCReco)
       {
         selectedMCReco->hist->SetDirectory(&file);
-        selectedMCReco->hist->Write((GetName() + "_data").c_str()); //Make this histogram look just like the data for closure tests
+        selectedMCReco->hist->Write(); // TODO: (GetName() + "_mcdata").c_str()); //Make this histogram look just like the data for closure tests
       }
     }
 
@@ -141,19 +159,21 @@ class Variable: public PlotUtils::VariableBase<CVUniverse>
       m_backgroundHists->visit([](Hist& categ) { categ.SyncCVHistos(); });
       m_MChists->visit([](Hist& categ) { categ.SyncCVHistos(); });
       fSignalByPionsInVar->visit([](auto& Hist) {Hist.SyncCVHistos();});
+      fSideBandByPionsInVar->visit([](auto& Hist) {Hist.SyncCVHistos();});
       if(dataHist) dataHist->SyncCVHistos();
       if(efficiencyNumerator) efficiencyNumerator->SyncCVHistos();
       if(efficiencyDenominator) efficiencyDenominator->SyncCVHistos();
       if(selectedSignalReco) selectedSignalReco->SyncCVHistos();
       if(selectedMCReco) selectedMCReco->SyncCVHistos();
       if(migration) migration->SyncCVHistos();
+      if(recoMinusTrue) recoMinusTrue->SyncCVHistos();
     }
 
     void FillCategHistos(const CVUniverse& univ, double var,  const double weight)
     {
       const auto pionCat = std::find_if(pionFSCategories.begin(), pionFSCategories.end(), [&univ](auto& category) { return (*category)(univ); });
       (*fSignalByPionsInVar)[*pionCat].FillUniverse(&univ, var, weight);
-      
+      (*fSideBandByPionsInVar)[*pionCat].FillUniverse(&univ, var, weight);
     }
 };
 

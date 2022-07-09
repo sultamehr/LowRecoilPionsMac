@@ -23,10 +23,14 @@ class hasMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
       {
         Michel current_michel = Michel(univ, i);
         if (current_michel.is_fitted != 1) continue;
-        if (current_michel.vtx_michel_timediff < .400) continue;
+	double vtxtime = univ.GetVertex().T()/pow(10, 3); //mus
+	double micheltime = current_michel.time; //already in mus
+        double timediff = micheltime - vtxtime; //if negative, michel happened before vertex. 
+        //if (timediff > -.100) continue;
+ 	if (current_michel.vtx_michel_timediff < 0.400) continue; // < 0.400 is to reject dead michels that happen during dead time. >-0.250 is to see what matches look like for michels that happen before neutrino event. 
         if (current_michel.true_parentpdg == 211) evt.m_ntruepiparents.push_back(current_michel);  
-        evt.m_nmichels.push_back(current_michel);
-        
+        //evt.m_nmichels.push_back(current_michel);
+        evt.m_allmichels.push_back(current_michel);       
        }
         //Filling Event Level Info needed for 2D selection 
         double lowtpiinevent = univ.GetTrueTpi();
@@ -34,7 +38,7 @@ class hasMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
         evt.pT_reco = univ.GetMuonPT();
 	evt.q3_reco = univ.Getq3();
 	evt.eavail_reco = univ.GetEavail();
-        return !evt.m_nmichels.empty();
+        return !evt.m_allmichels.empty();
     }
 
 };

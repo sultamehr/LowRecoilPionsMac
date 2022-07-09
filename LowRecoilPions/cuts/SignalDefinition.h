@@ -12,7 +12,7 @@ template <class UNIVERSE>
 class Q3Limit: public PlotUtils::SignalConstraint<UNIVERSE>
 {
   public:
-    Q3Limit(const double q3Min, const double q3Max): PlotUtils::SignalConstraint<UNIVERSE>(std::to_string(q3Min) + "q3 < " + std::to_string(q3Max) + " GeV"),
+    Q3Limit(const double q3Min, const double q3Max): PlotUtils::SignalConstraint<UNIVERSE>(std::to_string(q3Min) + "True q3 < " + std::to_string(q3Max) + " GeV"),
   fQ3Min(q3Min),
   fQ3Max(q3Max)
     {
@@ -24,7 +24,7 @@ class Q3Limit: public PlotUtils::SignalConstraint<UNIVERSE>
     bool checkConstraint(const UNIVERSE& univ) const //override
     {
       double trueq3 = univ.Getq3True();
-      return trueq3 > fQ3Min && trueq3 < fQ3Max;
+      return trueq3 > fQ3Min && trueq3 <= fQ3Max;
     }
 };
 template <class UNIVERSE>
@@ -47,7 +47,7 @@ class hasTruePion: public PlotUtils::SignalConstraint<UNIVERSE>
 
       }
 
-      if (npi > 0) return true;
+      if (npi >= 1 && npi <= 3) return true;
       else return false;
     }
 };
@@ -56,18 +56,18 @@ template <class UNIVERSE>
 class pTRangeLimit: public PlotUtils::SignalConstraint<UNIVERSE>
 {
   public:
-    pTRangeLimit(const double pTMin, const double pTMax): PlotUtils::SignalConstraint<UNIVERSE>(std::to_string(pTMin) + "q3 < " + std::to_string(pTMax) + " GeV"),
+    pTRangeLimit(const double pTMin, const double pTMax): PlotUtils::SignalConstraint<UNIVERSE>(std::to_string(pTMin) + "True pT < " + std::to_string(pTMax) + " GeV"),
   fpTMin(pTMin),
   fpTMax(pTMax)
     {
     }
 
   private:
-    double fpTMax; //Maximum q3 allowed in GeV/c
-    double fpTMin; // Min q3 allowed in GeV/c
+    double fpTMax; //Maximum pT allowed in GeV/c
+    double fpTMin; // Min pT allowed in GeV/c
     bool checkConstraint(const UNIVERSE& univ) const //override
     {
-      double truepT = univ.GetMuonPTTrue();
+      double truepT = univ.GetMuonPTTrue()/1000.;
       return truepT > fpTMin && truepT < fpTMax;
     }
 };
