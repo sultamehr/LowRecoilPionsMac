@@ -1,7 +1,7 @@
-#define MC_OUT_FILE_NAME "runEventLoopMC_June222022_EavailComp_q3bin6_reweight.root"
-#define DATA_OUT_FILE_NAME "runEventLoopData_June222022_EavailComp_q3bin6_reweight.root"
-#define MC_SIDE_FILE_NAME "runEventLoopMC_June222022_Sideband_q3bin6_reweight.root"
-#define DATA_SIDE_FILE_NAME "runEventLoopDATA_June222022_Sideband_q3bin6_reweight.root"
+#define MC_OUT_FILE_NAME "runEventLoopMC_June242022_EavailComp_q3bin6_reweight.root"
+#define DATA_OUT_FILE_NAME "runEventLoopData_June242022_EavailComp_q3bin6_reweight.root"
+#define MC_SIDE_FILE_NAME "runEventLoopMC_June242022_Sideband_q3bin6_reweight.root"
+#define DATA_SIDE_FILE_NAME "runEventLoopDATA_June242022_Sideband_q3bin6_reweight.root"
 
 
 #define USAGE \
@@ -100,6 +100,7 @@ enum ErrorCodes
 #include "PlotUtils/MINOSEfficiencyReweighter.h"
 #include "PlotUtils/TargetUtils.h"
 #include "../MAT-MINERvA/weighters/PionReweighter.h"
+#include "PlotUtils/LowRecPionSignal.h""
 #pragma GCC diagnostic pop
 
 //ROOT includes
@@ -128,15 +129,15 @@ void LoopAndFillEventSelection(
   auto& cvUniv = error_bands["cv"].front();
 
   std::cout << "Starting MC reco loop...\n";
-  const int nEntries = chain->GetEntries();
-  for (int i=0; i<nEntries; ++i)
+  const int nEntries = chain->GetEntries(); // TODO: July 10 CHANGE BACK TO GETENTRIES
+  for (int i=0; i < nEntries; ++i)
   {
     if(i%1000==0) std::cout << i << " / " << nEntries << "\r" << std::flush;
-
+    //std::cout << "Now Printing for Event " << i << std::endl;
     MichelEvent cvEvent;
     cvUniv->SetEntry(i);
     model.SetEntry(*cvUniv, cvEvent);
-    const double cvWeight = model.GetWeight(*cvUniv, cvEvent);
+    const double cvWeight =model.GetWeight(*cvUniv, cvEvent);// TODO: Put this model weight back. model.GetWeight(*cvUniv, cvEvent);
 
     //=========================================
     // Systematics loop(s)
@@ -146,34 +147,43 @@ void LoopAndFillEventSelection(
       std::vector<CVUniverse*> error_band_universes = band.second;
       for (auto universe : error_band_universes)
       {
+        //if (universe->ShortName() != "cv") continue;
         MichelEvent myevent; // make sure your event is inside the error band loop. 
-    
+        //if (universe->ShortName() != "cv") continue;
         // Tell the Event which entry in the TChain it's looking at
         universe->SetEntry(i);
         const double weight2 = model.GetWeight(*universe, myevent); 
         const auto cutResults = michelcuts.isMCSelected(*universe, myevent, cvWeight);
+        //const auto cutResults = michelcuts.isDataSelected(*universe, myevent);       
+        //if (universe->ShortName() != "cv") continue;
+	if (!cutResults.all()) continue;
         if (cutResults.all()){
-		setDistanceMichelSelection(*universe, myevent, 150.);
-                setClosestMichel(*universe, myevent,0);
-		//myevent.m_nmichels.clear();
-                //myevent.m_nmichels = myevent.m_nmichelspass;     
-		//const double weight2 = model.GetWeight(*universe, myevent);      
+	    setDistanceMichelSelection(*universe, myevent, 150.);
+            setClosestMichel(*universe, myevent,0);
+  	    if (!myevent.m_nmichelspass.empty()){
 		for(auto& var: vars) {
-            		var->selectedMCReco->FillUniverse(universe, var->GetRecoValue(*universe), weight2); //"Fake data" for closure
+			//std::cout << "Filling Var for this universe " << i << std::endl;  
+		  	//std::cout << " Var Value is " << var->GetRecoValue(*universe) << std::endl;  
+        		var->selectedMCReco->FillUniverse(universe, var->GetRecoValue(*universe), weight2); //"Fake data" for closure
             		(*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValue(*universe), weight2);
             		var->FillCategHistos(*universe,var->GetRecoValue(*universe), weight2);
-            		var->migration->FillUniverse(universe, var->GetRecoValue(*universe), var->GetTrueValue(*universe), weight2);
+            		//var->migration->FillUniverse(universe, var->GetRecoValue(*universe), var->GetTrueValue(*universe), weight2);
             		var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValue(*universe), weight2);
             		double reco = var->GetRecoValue(*universe);
             		double truevar = var->GetTrueValue(*universe);
             		double recomtrue = reco - truevar;
+			if (recomtrue < -2000. && var->GetName() == "EAvailable") {
+		        	universe->PrintArachneLink();
+				std::cout << "Reco Available Energy is " << reco << std::endl;
+				std::cout << "True Available Energy is " << truevar << std::endl;
+			} 
             		var->recoMinusTrue->FillUniverse(universe, recomtrue, weight2);
         	}
         	for(auto& var: vars2D) {
                 	var->mcTotalHist->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
                 	(*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
                 	var->FillCategHistos(*universe,var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
-                	var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight2);
+                	//var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight2);
                 	double recoX = var->GetRecoValueX(*universe);
                 	double truevarX = var->GetTrueValueX(*universe);
                 	double recomtrueX = recoX - truevarX;
@@ -189,11 +199,13 @@ void LoopAndFillEventSelection(
         	const bool isSignal = michelcuts.isSignal(*universe, weight2);
 
 		if(isSignal){
-			//for(auto& var: vars)
-          		//{
-			//	var->selectedSignalReco->FillUniverse(universe, var->GetRecoValue(*universe), weight2); //Efficiency numerator in reco variables.  Useful for warping studies 
+			for(auto& var: vars)
+          		{
+				var->migration->FillUniverse(universe, var->GetRecoValue(*universe), var->GetTrueValue(*universe), weight2);
+                                var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValue(*universe), weight2);
+				var->selectedSignalReco->FillUniverse(universe, var->GetRecoValue(*universe), weight2); //Efficiency numerator in reco variables.  Useful for warping studies 
 		
-			//}
+			}
 			for(auto& var: vars2D)
           		{
             			var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight2);
@@ -210,25 +222,26 @@ void LoopAndFillEventSelection(
           		}
           		for(auto& var: vars2D) (*var->m_backgroundHists)[bkgd_ID].FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
         	} // End of else statement for if Signal
-        } // End of if (cutResults.all()) -> SelectionReco
-        else if (!cutResults.all()){
-	  ///myevent.m_nmichels.clear();
+        } // End of if SelectedMichels Not Empty
+        else{
+    	
           //myevent.m_nmichels = myevent.m_sidebandpass;
           setDistanceMichelSidebands(*universe, myevent, 150., 500.);
           setClosestMichel(*universe, myevent,1);
-	  const double weight2 = model.GetWeight(*universe, myevent);
-          for(auto& var: sidevars) {
-            var->selectedMCReco->FillUniverse(universe, var->GetRecoValue(*universe), weight2); //"Fake data" for closure
-            (*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValue(*universe), weight2);
-            var->FillCategHistos(*universe,var->GetRecoValue(*universe), weight2);
-            var->migration->FillUniverse(universe, var->GetRecoValue(*universe), var->GetTrueValue(*universe), weight2);
-            var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValue(*universe), weight2);
-            double reco = var->GetRecoValue(*universe);
-            double truevar = var->GetTrueValue(*universe);
-            double recomtrue = reco - truevar;
-            var->recoMinusTrue->FillUniverse(universe, recomtrue, weight2);
-           }
-           for(auto& var: sidevars2D) {
+	  if (!myevent.m_sidebandpass.empty()){
+ 	     //const double weight2 = model.GetWeight(*universe, myevent);
+             for(auto& var: sidevars) {
+                var->selectedMCReco->FillUniverse(universe, var->GetRecoValue(*universe), weight2); //"Fake data" for closure
+                (*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValue(*universe), weight2);
+                var->FillCategHistos(*universe,var->GetRecoValue(*universe), weight2);
+                var->migration->FillUniverse(universe, var->GetRecoValue(*universe), var->GetTrueValue(*universe), weight2);
+                var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValue(*universe), weight2);
+                double reco = var->GetRecoValue(*universe);
+                double truevar = var->GetTrueValue(*universe);
+                double recomtrue = reco - truevar;
+                var->recoMinusTrue->FillUniverse(universe, recomtrue, weight2);
+             }
+             for(auto& var: sidevars2D) {
                 var->mcTotalHist->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
                 (*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
                 var->FillCategHistos(*universe,var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
@@ -241,95 +254,12 @@ void LoopAndFillEventSelection(
                 double recomtrueY = recoY - truevarY;
                 var->recoMinusTrueRBins->FillUniverse(universe, recomtrueX, var->GetRecoValueY(*universe), weight2);
                 var->recoMinusTrueTBins->FillUniverse(universe, recomtrueX, var->GetTrueValueY(*universe), weight2);
-          }
-          for(auto& study: sideband_studies) study->SelectedSignal(*universe, myevent, weight2);
+             }
+             for(auto& study: sideband_studies) study->SelectedSignal(*universe, myevent, weight2);
 
-
+ 	  }
         } // end of else if (!cutResults[0] && evt.sideband == 1) // To fill Sideband Variables
-
-
-        // ----- Old way of filling without worrying about sidebands -- commenting it out for now 
-         
-        //weight is ignored in isMCSelected() for all but the CV Universe.
-        
-       /*
-       if (!michelcuts.isMCSelected(*universe, myevent, cvWeight).all()) continue; //all is another function that will later help me with sidebands
-        myevent.m_nmichels = myevent.m_nmichelspass;
- 	const double weight2 = model.GetWeight(*universe, myevent); //Only calculate the weight for events that will use it 
-          
-        
-	for(auto& var: vars) {
-	    var->selectedMCReco->FillUniverse(universe, var->GetRecoValue(*universe), weight2); //"Fake data" for closure
-	    (*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValue(*universe), weight2);
-            var->FillCategHistos(*universe,var->GetRecoValue(*universe), weight2);
-            var->migration->FillUniverse(universe, var->GetRecoValue(*universe), var->GetTrueValue(*universe), weight2);
-            var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValue(*universe), weight2);
-            double reco = var->GetRecoValue(*universe);
-	    double truevar = var->GetTrueValue(*universe);
-	    double recomtrue = reco - truevar;
-            var->recoMinusTrue->FillUniverse(universe, recomtrue, weight2);
-        }
-	for(auto& var: vars2D) {
-		var->mcTotalHist->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
-		(*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
-		var->FillCategHistos(*universe,var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
-                var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight2);
-                double recoX = var->GetRecoValueX(*universe);
-                double truevarX = var->GetTrueValueX(*universe);
-                double recomtrueX = recoX - truevarX;
-                double recoY = var->GetRecoValueY(*universe);
-                double truevarY = var->GetTrueValueY(*universe);
-                double recomtrueY = recoY - truevarY;
-                var->recoMinusTrueRBins->FillUniverse(universe, recomtrueX, var->GetRecoValueY(*universe), weight2);
-                var->recoMinusTrueTBins->FillUniverse(universe, recomtrueX, var->GetTrueValueY(*universe), weight2);
-         }
-       
-	for(auto& study: studies) study->SelectedSignal(*universe, myevent, weight2); 
-	
-        const bool isSignal = michelcuts.isSignal(*universe, weight2);
-          
-        if(isSignal)
-        {
-          //for(auto& study: studies) study->SelectedSignal(*universe, myevent, weight2);
-          
-          for(auto& var: vars) {
-            var->selectedMCReco->FillUniverse(universe, var->GetRecoValue(*universe), weight2); //"Fake data" for closure
-            (*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValue(*universe), weight2);
-            var->FillCategHistos(*universe,var->GetRecoValue(*universe), weight2);
-          }
-          for(auto& var: vars2D) {
-                var->mcTotalHist->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
-                (*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
-                var->FillCategHistos(*universe,var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);}
-
-          for(auto& study: studies) study->SelectedSignal(*universe, myevent, weight2);
-          
-          for(auto& var: vars)
-          {
-            //Cross section components
-            //var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValue(*universe), weight2);
-            //var->migration->FillUniverse(universe, var->GetRecoValue(*universe), var->GetTrueValue(*universe), weight2);
-            var->selectedSignalReco->FillUniverse(universe, var->GetRecoValue(*universe), weight2); //Efficiency numerator in reco variables.  Useful for warping studies 
-	  }
-
-	 for(auto& var: vars2D)
-          {
-            var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight2);
-          }
-        }
-        else
-        {
-          int bkgd_ID = -1;
-          if (universe->GetCurrent()==2)bkgd_ID=0;
-          else bkgd_ID=1;
-
-          for(auto& var: vars){
-
-		 (*var->m_backgroundHists)[bkgd_ID].FillUniverse(universe, var->GetRecoValue(*universe), weight2);
-	  }
-          for(auto& var: vars2D) (*var->m_backgroundHists)[bkgd_ID].FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
-        }// End of else loop for background 
-      */ // End of commenting out the Old way of looping without sidebands
+       } // If event passes PreCuts
       } // End band's universe loop
     } // End Band loop
   } //End entries loop
@@ -349,55 +279,59 @@ void LoopAndFillData( PlotUtils::ChainWrapper* data,
 
 {
   std::cout << "Starting data loop...\n";
-  const int nEntries = data->GetEntries();
-  for (int i=0; i<data->GetEntries(); ++i) {
-    for (auto universe : data_band) {
+  const int nEntries = data->GetEntries(); // TODO: July 10 CHANGE BACK TO GEtENTRIES
+  for (int i=0; i <nEntries; ++i) {
+    //std::cout << "Now Printing for Event " << i << std::endl;
+    //for (auto universe : data_band) {
+      const auto universe = data_band.front();
       universe->SetEntry(i);
       if(i%1000==0) std::cout << i << " / " << nEntries << "\r" << std::flush;
       //std::cout << "Creating Michel Event" << std::endl;
+      //if (universe->ShortName() != "cv") continue;
       MichelEvent myevent; 
       //std::cout << "Applying Cuts to Data Event " << std::endl;
       const auto cutResults = michelcuts.isDataSelected(*universe, myevent);
+      if (!cutResults.all()) continue;
       if (cutResults.all()){
       	setDistanceMichelSelection(*universe, myevent, 150.);
         setClosestMichel(*universe, myevent,0);
-        myevent.m_nmichels.clear();
-        myevent.m_nmichels = myevent.m_nmichelspass;
-      	//const auto cutResults = michelcuts.isDataSelected(*universe, myevent);
-      	//if(cutResults.all()) continue;
+        if (!myevent.m_nmichelspass.empty()){
 
-      	//std::cout << "Filling Data STudies" << std::endl;
-      	for(auto& study: studies) study->Selected(*universe, myevent, 1); 
+      		//std::cout << "Filling Data STudies" << std::endl;
+      		for(auto& study: studies) study->Selected(*universe, myevent, 1); 
 
-      	for(auto& var: vars)
-      	{
-        	var->dataHist->FillUniverse(universe, var->GetRecoValue(*universe, myevent.m_idx), 1);
-      	}
+      		for(auto& var: vars)
+      		{
+ 			//std::cout << "Filling Data Var for This universe " << i << std::endl;
+          		//std::cout << " Var Value is " << var->GetRecoValue(*universe) << std::endl;
+			var->dataHist->FillUniverse(universe, var->GetRecoValue(*universe), 1);
+      		}
 
-      	for(auto& var: vars2D)
-      	{
-        	var->dataHist->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), 1);
-      	}
-     } // End of if (michelcuts.isDataSelected(*universe, myevent).all()) -> filling Selection
-     else if (!cutResults.all()){
-        setDistanceMichelSidebands(*universe, myevent, 150., 500.);
-        setClosestMichel(*universe, myevent,1);
-        //myevent.m_nmichels.clear();
-        //myevent.m_nmichels = myevent.m_sidebandpass;       
-        for(auto& study: data_sidebands) study->Selected(*universe, myevent, 1); 
+      		for(auto& var: vars2D)
+      		{
+        		var->dataHist->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), 1);
+      		}
+     	}	 // End of if (michelcuts.isDataSelected(*universe, myevent).all()) -> filling Selection
+        else{
+          setDistanceMichelSidebands(*universe, myevent, 150., 500.);
+          setClosestMichel(*universe, myevent,1);
+          if (!myevent.m_sidebandpass.empty()){
+        	for(auto& study: data_sidebands) study->Selected(*universe, myevent, 1); 
 
-        for(auto& var: sidevars)
-        {
-          var->dataHist->FillUniverse(universe, var->GetRecoValue(*universe, myevent.m_idx), 1);
-        }
+        	for(auto& var: sidevars)
+        	{
+          	     var->dataHist->FillUniverse(universe, var->GetRecoValue(*universe), 1);
+        	}
 
-        for(auto& var: sidevars2D)
-        {
-          var->dataHist->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), 1);
-        }
-     } // End of else if (!cutResults[0] && myevent.sideband == 1 // Filling Sideband Variables
-    }
-  }
+        	for(auto& var: sidevars2D)
+        	{
+          	    var->dataHist->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), 1);
+        	}
+     	} // End of else for Filling Sideband Variables
+       } // End of  else if no michelspass
+      }// End of PreCuts Pass
+    //} // End of Data Band 
+   } // End of Entries
   std::cout << "Finished data loop.\n";
 }
 
@@ -560,49 +494,52 @@ int main(const int argc, const char** argv)
 
   //Now that we've defined what a cross section is, decide which sample and model
   //we're extracting a cross section for.
-  PlotUtils::Cutter<CVUniverse, MichelEvent>::reco_t  preCuts,nopreCuts;
-  PlotUtils::Cutter<CVUniverse, MichelEvent>::reco_t  sidebands, nosidebands;
+  PlotUtils::Cutter<CVUniverse, MichelEvent>::reco_t  preCuts;
+  PlotUtils::Cutter<CVUniverse, MichelEvent>::reco_t  sidebands;
   PlotUtils::Cutter<CVUniverse, MichelEvent>::truth_t signalDefinition, phaseSpace;
 
   const double minZ = 5980, maxZ = 8422, apothem = 850; //All in mm
-  preCuts.emplace_back(new reco::ZRange<CVUniverse, MichelEvent>("Tracker", minZ, maxZ));
+  //preCuts.emplace_back(new reco::ZRange<CVUniverse, MichelEvent>("Tracker", minZ, maxZ));
   preCuts.emplace_back(new reco::Apothem<CVUniverse, MichelEvent>(apothem));
+  preCuts.emplace_back(new reco::ZRange<CVUniverse, MichelEvent>("Tracker", minZ, maxZ));
   preCuts.emplace_back(new reco::MaxMuonAngle<CVUniverse, MichelEvent>(20.));
   preCuts.emplace_back(new reco::HasMINOSMatch<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new reco::NoDeadtime<CVUniverse, MichelEvent>(1, "Deadtime"));
   preCuts.emplace_back(new reco::IsNeutrino<CVUniverse, MichelEvent>());
-  preCuts.emplace_back(new Q3RangeReco<CVUniverse, MichelEvent>(0.0,1.2));
-  //preCuts.emplace_back(new PTRangeReco<CVUniverse, MichelEvent>(0.0,1.0));
+  //preCuts.emplace_back(new Q3RangeReco<CVUniverse, MichelEvent>(0.0,1.2));
+  preCuts.emplace_back(new PTRangeReco<CVUniverse, MichelEvent>(0.0,1.0));
 
   //preCuts.emplace_back(new hasMichel<CVUniverse, MichelEvent>());
   //preCuts.emplace_back(new BestMichelDistance2D<CVUniverse, MichelEvent>(100.));
   //preCuts.emplace_back(new VtxMatchFirst<CVUniverse, MichelEvent>(200., 102.));
   //preCuts.emplace_back(new NPiCut<CVUniverse, MichelEvent>(1));
   preCuts.emplace_back(new hasMichel<CVUniverse, MichelEvent>());
-  preCuts.emplace_back(new Distance2DSideband<CVUniverse, MichelEvent>(500.));
+  //preCuts.emplace_back(new Distance2DSideband<CVUniverse, MichelEvent>(500.));
   
-  preCuts.emplace_back(new BestMichelDistance2D<CVUniverse, MichelEvent>(150.));
-  preCuts.emplace_back(new GetClosestMichel<CVUniverse, MichelEvent>(0));
+  //preCuts.emplace_back(new BestMichelDistance2D<CVUniverse, MichelEvent>(150.));
+  //preCuts.emplace_back(new GetClosestMichel<CVUniverse, MichelEvent>(0));
   //nosidebands.emplace_back(new BestMichelDistance2D<CVUniverse, MichelEvent>(150.));
   //nosidebands.emplace_back(new GetClosestMichel<CVUniverse, MichelEvent>(0));
 
 
-  TFile* mc_MichelStudies = TFile::Open("June222022_EavailComp_noreweight_q3bin6_MC.root", "RECREATE");
-  TFile* data_MichelStudies = TFile::Open("June222022_EavailComp_noreweight_q3bin6_data.root", "RECREATE");
-  TFile* mc_SidebandStudies = TFile::Open("June222022_Sideband_noreweight_q3bin6_MC.root", "RECREATE");
-  TFile* data_SidebandStudies = TFile::Open("June222022_Sideband_noreweight_q3bin6_data.root", "RECREATE");
+  TFile* mc_MichelStudies = TFile::Open("June242022_EavailComp_noreweight_q3bin6_MC.root", "RECREATE");
+  TFile* data_MichelStudies = TFile::Open("June242022_EavailComp_noreweight_q3bin6_data.root", "RECREATE");
+  TFile* mc_SidebandStudies = TFile::Open("June242022_Sideband_noreweight_q3bin6_MC.root", "RECREATE");
+  TFile* data_SidebandStudies = TFile::Open("June242022_Sideband_noreweight_q3bin6_data.root", "RECREATE");
 
   signalDefinition.emplace_back(new truth::IsNeutrino<CVUniverse>());
   signalDefinition.emplace_back(new truth::IsCC<CVUniverse>());
+  signalDefinition.emplace_back(new truth::HasPion<CVUniverse>());
   //signalDefinition.emplace_back(new Q3Limit<CVUniverse>(0.0, 1.20));
+  
   //signalDefinition.emplace_back(new hasTruePion<CVUniverse>());                                                                                                              
   
   phaseSpace.emplace_back(new truth::ZRange<CVUniverse>("Tracker", minZ, maxZ));
   phaseSpace.emplace_back(new truth::Apothem<CVUniverse>(apothem));
   phaseSpace.emplace_back(new truth::MuonAngle<CVUniverse>(20.));
   phaseSpace.emplace_back(new truth::PZMuMin<CVUniverse>(1500.));
-                                                                                                                                                   
-  PlotUtils::Cutter<CVUniverse, MichelEvent> mycuts(std::move(preCuts), std::move(nosidebands) , std::move(signalDefinition),std::move(phaseSpace));
+  phaseSpace.emplace_back(new truth::pTRangeLimit<CVUniverse>(0., 1.0));                                                                                                                                                 
+  PlotUtils::Cutter<CVUniverse, MichelEvent> mycuts(std::move(preCuts), std::move(sidebands) , std::move(signalDefinition),std::move(phaseSpace));
 
   std::vector<std::unique_ptr<PlotUtils::Reweighter<CVUniverse, MichelEvent>>> MnvTunev1;
   MnvTunev1.emplace_back(new PlotUtils::FluxAndCVReweighter<CVUniverse, MichelEvent>());
@@ -661,7 +598,10 @@ int main(const int argc, const char** argv)
     new Variable("ERecoilCorrvEavail", "Erecoilcorr", robsRecoilBins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueEAvail),
     new Variable("ERecoilvq0", "Erecoilq0", robsRecoilBins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueQ0),
     new Variable("ERecoilCorrvq0", "Erecoilcorrq0", robsRecoilBins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueQ0),
-    new Variable("EavailCorr", "Eavailablecorr", robsRecoilBins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueEAvail)
+    new Variable("EavailCorr", "Eavailablecorr", robsRecoilBins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueEAvail),
+    new Variable("NoPolyLineE", "NoPolyLineE", robsRecoilBins, &CVUniverse::GetNoPolylineE, &CVUniverse::GetTrueQ0),
+    new Variable("PolyLineE", "PolyLineE", robsRecoilBins, &CVUniverse::GetPolylineE, &CVUniverse::GetTrueQ0),
+    new Variable("Eavailvq0", "Eavailvq0", robsRecoilBins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueQ0) 
    };
    
    std::vector<Variable*> varsagain = {
@@ -682,7 +622,9 @@ int main(const int argc, const char** argv)
     new Variable("ERecoilCorrvEavaily", "Erecoilcorry", recoilbins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueEAvail),
     new Variable("ERecoilvq0y", "Erecoilq0y", recoilbins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueQ0),
     new Variable("ERecoilCorrvq0y", "Erecoilcorrq0y", recoilbins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueQ0),
-    new Variable("EavailCorry", "Eavailablecorry", recoilbins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueEAvail)
+    new Variable("EavailCorry", "Eavailablecorry", recoilbins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueEAvail),
+    new Variable("EavailCorryq0", "Eavailablecorryq0", recoilbins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueQ0)  
+    
   };
 
   std::vector<Variable2D*> vars2D;
@@ -701,6 +643,7 @@ int main(const int argc, const char** argv)
   vars2D.push_back(new Variable2D(*varsagain[9], *varsagain[14])); 
   vars2D.push_back(new Variable2D(*varsagain[10], *varsagain[15]));
   vars2D.push_back(new Variable2D(*varsagain[11], *varsagain[16]));
+  vars2D.push_back(new Variable2D(*vars[14], *varsagain[17])); // Eavail vs true q0 in recoilbins
 
   std::vector<Variable*> sidevars = {
     new Variable("pTmu", "p_{T, #mu} [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue),
@@ -1422,17 +1365,17 @@ std::function<double(const CVUniverse&, const MichelEvent&)> lowesttpi = [](cons
   try
   {
     CVUniverse::SetTruth(false);
-    LoopAndFillEventSelection(options.m_mc, error_bands, vars, vars2D, studies,sidevars, sidevars2D, sideband_studies, mycuts, model);
+    LoopAndFillEventSelection(options.m_mc, error_bands, vars, vars2D, studies, sidevars, sidevars2D, sideband_studies, mycuts, model);
     std::cout << "MC cut summary:\n" << mycuts << "\n";
-    mycuts.resetStats();
+    //mycuts.resetStats();
     CVUniverse::SetTruth(true);
     //LoopAndFillEffDenom(options.m_truth, truth_bands, vars, vars2D,studies, mycuts, model);
     //options.PrintMacroConfiguration(argv[0]);
     //std::cout << "Sideband Cut Summary:\n" << mysides << "\n";
-    //mysides.resetStats();
-    //CVUniverse::SetTruth(false);
-    //LoopAndFillData(options.m_data, data_band, vars, vars2D, data_studies,sidevars, sidevars2D, data_sidebands, mycuts);
-    //std::cout << "Data cut summary:\n" << mycuts << "\n";
+    mycuts.resetStats();
+    CVUniverse::SetTruth(false);
+    LoopAndFillData(options.m_data, data_band, vars, vars2D, data_studies, sidevars, sidevars2D, data_sidebands, mycuts);
+    std::cout << "Data cut summary:\n" << mycuts << "\n";
     //mycuts.resetStats();
     
     std::cout  << "Opening the MCOUTPUT for EVENT hists" << std::endl;
@@ -1472,10 +1415,10 @@ std::function<double(const CVUniverse&, const MichelEvent&)> lowesttpi = [](cons
     std::cout << "Saving Histos to Data Files" << std::endl;
 
 
-    CVUniverse::SetTruth(false);
-    LoopAndFillData(options.m_data, data_band, vars, vars2D, data_studies,sidevars, sidevars2D, data_sidebands, mycuts);
-    std::cout << "Data cut summary:\n" << mycuts << "\n";
-    mycuts.resetStats();
+    //CVUniverse::SetTruth(false);
+    //LoopAndFillData(options.m_data, data_band, vars, vars2D, data_studies,sidevars, sidevars2D, data_sidebands, mycuts);
+    //std::cout << "Data cut summary:\n" << mycuts << "\n";
+    //mycuts.resetStats();
 
     for(auto& study: data_studies) study->SaveOrDraw(*data_MichelStudies);
     for(auto& study: data_sidebands) study->SaveOrDraw(*data_SidebandStudies);

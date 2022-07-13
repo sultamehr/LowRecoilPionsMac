@@ -20,6 +20,8 @@ class Variable: public PlotUtils::VariableBase<CVUniverse>
     Variable(ARGS... args): PlotUtils::VariableBase<CVUniverse>(args...)
     {
     }
+   
+    //#include "util/SafeROOTName.h"
 
     //TODO: It's really silly to have to make 2 sets of error bands just because they point to different trees.
     //      I'd rather the physics of the error bands remain the same and just change which tree they point to.
@@ -47,7 +49,7 @@ class Variable: public PlotUtils::VariableBase<CVUniverse>
 
       fSignalByPionsInVar = new util::Categorized<Hist, FSCategory*>(pionFSCategories,GetName().c_str(),(GetName()).c_str() , GetBinVec(),mc_error_bands);
      
-      fSideBandByPionsInVar = new util::Categorized<Hist, FSCategory*>(pionFSCategories,GetName().c_str(),(GetName()).c_str() , GetBinVec(),mc_error_bands);
+      //fSideBandByPionsInVar = new util::Categorized<Hist, FSCategory*>(pionFSCategories,GetName().c_str(),(GetName()).c_str() , GetBinVec(),mc_error_bands);
 
       efficiencyNumerator = new Hist((GetName() + "_efficiency_numerator").c_str(), GetName().c_str(), GetBinVec(), mc_error_bands);
       efficiencyDenominator = new Hist((GetName() + "_efficiency_denominator").c_str(), GetName().c_str(), GetBinVec(), truth_error_bands);
@@ -55,7 +57,12 @@ class Variable: public PlotUtils::VariableBase<CVUniverse>
       selectedMCReco = new Hist((GetName() + "_selected_mc_reco").c_str(), GetName().c_str(), GetBinVec(), mc_error_bands);
       std::vector<double> truediffbins;
       const double diffBinWidth = 25; //MeV
-      for(int whichBin = 0; whichBin < 600 + 1; ++whichBin) truediffbins.push_back(-3000.+diffBinWidth * whichBin);
+      for(int whichBin = 0; whichBin < 600 + 1; ++whichBin) {
+	double max = diffBinWidth*whichBin;
+	if (max >= 3000.) break;
+	truediffbins.push_back(-3000.+diffBinWidth * whichBin);
+        
+      }
       recoMinusTrue = new Hist((GetName() + "_recoMinusTrue").c_str(), GetName().c_str(), truediffbins, mc_error_bands);
 
       migration = new PlotUtils::Hist2DWrapper<CVUniverse>((GetName() + "_migration").c_str(), GetName().c_str(), GetBinVec(), GetBinVec(), mc_error_bands);
@@ -66,7 +73,7 @@ class Variable: public PlotUtils::VariableBase<CVUniverse>
     util::Categorized<Hist, int>* m_sidebandHists;
     util::Categorized<Hist, int>* m_MChists;
     util::Categorized<Hist, FSCategory*>* fSignalByPionsInVar;
-    util::Categorized<Hist, FSCategory*>* fSideBandByPionsInVar;
+    //util::Categorized<Hist, FSCategory*>* fSideBandByPionsInVar;
     Hist* dataHist;
     Hist* efficiencyNumerator;
     Hist* efficiencyDenominator;
@@ -146,7 +153,7 @@ class Variable: public PlotUtils::VariableBase<CVUniverse>
       if(selectedMCReco)
       {
         selectedMCReco->hist->SetDirectory(&file);
-        selectedMCReco->hist->Write(); // TODO: (GetName() + "_mcdata").c_str()); //Make this histogram look just like the data for closure tests
+        selectedMCReco->hist->Write((GetName() + "_data").c_str()); //Make this histogram look just like the data for closure tests
       }
     }
 
@@ -159,7 +166,7 @@ class Variable: public PlotUtils::VariableBase<CVUniverse>
       m_backgroundHists->visit([](Hist& categ) { categ.SyncCVHistos(); });
       m_MChists->visit([](Hist& categ) { categ.SyncCVHistos(); });
       fSignalByPionsInVar->visit([](auto& Hist) {Hist.SyncCVHistos();});
-      fSideBandByPionsInVar->visit([](auto& Hist) {Hist.SyncCVHistos();});
+      //fSideBandByPionsInVar->visit([](auto& Hist) {Hist.SyncCVHistos();});
       if(dataHist) dataHist->SyncCVHistos();
       if(efficiencyNumerator) efficiencyNumerator->SyncCVHistos();
       if(efficiencyDenominator) efficiencyDenominator->SyncCVHistos();
@@ -173,7 +180,7 @@ class Variable: public PlotUtils::VariableBase<CVUniverse>
     {
       const auto pionCat = std::find_if(pionFSCategories.begin(), pionFSCategories.end(), [&univ](auto& category) { return (*category)(univ); });
       (*fSignalByPionsInVar)[*pionCat].FillUniverse(&univ, var, weight);
-      (*fSideBandByPionsInVar)[*pionCat].FillUniverse(&univ, var, weight);
+      //(*fSideBandByPionsInVar)[*pionCat].FillUniverse(&univ, var, weight);
     }
 };
 

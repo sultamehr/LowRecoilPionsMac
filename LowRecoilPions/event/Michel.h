@@ -195,10 +195,11 @@ Michel::Michel(const CVUniverse& univ, int ci)
   if (overlay_fraction > 0.5) trueEndpoint = 0;
   else if (true_parentpdg == 211 && end1diff < end2diff) trueEndpoint = 1;
   else if (true_parentpdg == 211 && end2diff < end1diff) trueEndpoint = 2; 
+  
   if (is_fitted == 1) { // Do theMatching for Fitted Michels
        DoesMichelMatchVtx(univ); //GEts info for Vtx Match
        DoesMichelMatchClus(univ); // Gets info for ClusterMatch
-       //GetBestMatch();     
+       GetBestMatch();     
        GetPionAngle(univ);
   }
 

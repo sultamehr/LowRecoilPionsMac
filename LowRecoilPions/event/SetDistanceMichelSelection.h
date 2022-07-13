@@ -83,18 +83,18 @@ void setDistanceMichelSelection(const UNIVERSE& univ, EVENT& evt, const double m
          evt.m_allmichels[i].Best3Ddist = evt.m_allmichels[i].down_to_vertex_dist3D;
 	}
 	else if (distances3D[0] == evt.m_allmichels[i].up_clus_michel_dist3D){
-        evt.m_allmichels[i].BestMatch = 3;
-        evt.m_allmichels[i].best_XZ = evt.m_allmichels[i].up_to_clus_XZ;
-        evt.m_allmichels[i].best_UZ = evt.m_allmichels[i].up_to_clus_VZ;
-        evt.m_allmichels[i].best_VZ = evt.m_allmichels[i].up_to_clus_UZ;
-        evt.m_allmichels[i].Best3Ddist = evt.m_allmichels[i].up_clus_michvtx_dist3D;
+         evt.m_allmichels[i].BestMatch = 3;
+         evt.m_allmichels[i].best_XZ = evt.m_allmichels[i].up_to_clus_XZ;
+         evt.m_allmichels[i].best_UZ = evt.m_allmichels[i].up_to_clus_VZ;
+         evt.m_allmichels[i].best_VZ = evt.m_allmichels[i].up_to_clus_UZ;
+         evt.m_allmichels[i].Best3Ddist = evt.m_allmichels[i].up_clus_michvtx_dist3D;
 	}
 	else if (distances3D[0] == evt.m_allmichels[i].down_clus_michel_dist3D){
-        evt.m_allmichels[i].BestMatch = 4;
-        evt.m_allmichels[i].Best3Ddist = evt.m_allmichels[i].down_clus_michvtx_dist3D;
-        evt.m_allmichels[i].best_XZ = evt.m_allmichels[i].down_to_clus_XZ;
-        evt.m_allmichels[i].best_UZ = evt.m_allmichels[i].down_to_clus_UZ;
-        evt.m_allmichels[i].best_VZ = evt.m_allmichels[i].down_to_clus_VZ;
+         evt.m_allmichels[i].BestMatch = 4;
+         evt.m_allmichels[i].Best3Ddist = evt.m_allmichels[i].down_clus_michvtx_dist3D;
+         evt.m_allmichels[i].best_XZ = evt.m_allmichels[i].down_to_clus_XZ;
+         evt.m_allmichels[i].best_UZ = evt.m_allmichels[i].down_to_clus_UZ;
+         evt.m_allmichels[i].best_VZ = evt.m_allmichels[i].down_to_clus_VZ;
 	}
         else{
                 evt.m_allmichels[i].BestMatch = 0;

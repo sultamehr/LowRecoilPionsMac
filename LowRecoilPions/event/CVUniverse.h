@@ -165,21 +165,20 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   }  
 
   virtual double GetEavail() const {
-    //double eavail = GetDouble("recoil_energy_nonmuon_vtx0mm"); //Dan's MEC equivalent eavail defined by all clusters within the ID/ECal within [-20,35]ns of the interaction vertex. The clusters searched are all clusters which are not on the muon or added to the muon via the MuonFuzz tool. The MuonFuzz tool configuration uses default values.
-    //double eavail = GetDouble("MasterAnaDev_visible_E");
-    //std::cout << "Printing visible ENERGY Eavail: " << eavail << std::endl;
-    //double eavail = GetDouble("MasterAnaDev_recoil_E");
-    //double eavail = GetVecElem("recoil_summed_energy", 0);
-    //double ecal = GetDouble("blob_recoil_E_ecal");
-    //double hcal = GetDouble("blob_recoil_E_hcal");
-    //double tracker = GetDouble("blob_recoil_E_tracker");
-    //double od = GetDouble("blob_recoil_E_od");
-    //return (ecal+hcal+tracker+od); //Get these in MeV
+    //if (GetEAvailable() > 1500.) PrintArachneLink(); 
     return GetEAvailable();
     //return eavail;
     //return GetEAvailable();
    }
-  
+ 
+  virtual double GetNoPolylineE() const{
+	return GetDouble("recoil_E_nopolyline");
+  }
+
+  virtual double GetPolylineE() const {
+	return GetDouble("recoil_E_polylinecorrected");	
+  }
+ 
   virtual double GetRecoilECorr() const {
     double eavail = GetEAvailable() + M_pi;///GetDouble("recoil_E_nopolyline");
     return eavail;
@@ -359,8 +358,10 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
 	    double momentumx = GetVecElem("mc_FSPartPx", i);
 	    double momentumy = GetVecElem("mc_FSPartPy", i);
 	    double momentumz = GetVecElem("mc_FSPartPz", i);
-	    double momentum = sqrt(pow(momentumx, 2) + pow(momentumy, 2) + pow(momentumz, 2));
-            double pionmass = sqrt(pow(energy, 2) - pow(momentum, 2));  
+	    ROOT::Math::PxPyPzEVector pion;
+	    pion.SetPxPyPzE(momentumx, momentumy,momentumz, energy); 
+            double momentum = pion.P();
+	    double pionmass = sqrt(pow(energy, 2) - pow(momentum, 2));  
 	    double KE = energy - pionmass;
 	    if (tpi > KE) tpi = KE;     
         }
@@ -446,14 +447,18 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
        // strncpy(); // FAIL
        // memcpy();  // FAIL
        std::cout << link << std::endl;
-       }
+ }
+
+
+  
+
  virtual double GetTrueEAvail() const
  {
      double Eavail = 0.0;
      int pdgsize = GetInt("mc_nFSPart");
      for (int i = 0; i< pdgsize; i++)
      {
-        int pdg = GetVecElem("mc_FSPartPDG", i);  
+        int pdg = abs(GetVecElem("mc_FSPartPDG", i));  
         double energy = GetVecElem("mc_FSPartE", i); // hopefully this is in MeV
         if (pdg == 211) Eavail+= energy - 139.57; // subtracting pion mass to get Kinetic energy
         if (pdg == 2212) Eavail += energy - 938.28; // proton

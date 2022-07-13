@@ -63,10 +63,12 @@ class Variable2D: public PlotUtils::Variable2DBase<CVUniverse>
     Hist* selectedSignalReco;
     void InitializeDATAHists(std::vector<CVUniverse*>& data_error_bands)
     {
-        const char* name = GetName().c_str();
-  	dataHist = new Hist(name, name, GetBinVecX(), GetBinVecY(), data_error_bands);
+        const char* name = (GetName()).c_str();
+  	dataHist = new Hist((GetNameX() + "_" + GetNameY() + "_data").c_str(), name, GetBinVecX(), GetBinVecY(), data_error_bands);
  
     }
+
+
 
     void Write(TFile& file)
     {
@@ -80,33 +82,34 @@ class Variable2D: public PlotUtils::Variable2DBase<CVUniverse>
                                     });
       m_MChists->visit([&file](Hist& categ)
                                     {
-                                      categ.SyncCVHistos();
                                       categ.hist->SetDirectory(&file);
                                       categ.hist->Write(); //TODO: Or let the TFile destructor do this the "normal" way?                                                                                           
                                     });
       fSignalByPionsInVar->visit([&file](auto& Hist) {
-                                                    Hist.SyncCVHistos();
                                                     Hist.hist->SetDirectory(&file);
 						    Hist.hist->Write();
                                                 });
+
+
+
       if (dataHist->hist) {
-		dataHist->hist->SetDirectory(&file);
-		dataHist->hist->Write();
+                dataHist->hist->SetDirectory(&file);
+                dataHist->hist->Write();
       }
 
       if (mcTotalHist->hist) {
                 mcTotalHist->hist->SetDirectory(&file);
                 mcTotalHist->hist->Write();
       }
-      if (selectedSignalReco->hist) {
+      if (selectedSignalReco) {
                 selectedSignalReco->hist->SetDirectory(&file);
                 selectedSignalReco->hist->Write();
       }
-      if (recoMinusTrueTBins->hist) {
+      if (recoMinusTrueTBins) {
                 recoMinusTrueTBins->hist->SetDirectory(&file);
                 recoMinusTrueTBins->hist->Write();
       }
-      if (recoMinusTrueRBins->hist) {
+      if (recoMinusTrueRBins) {
                 recoMinusTrueRBins->hist->SetDirectory(&file);
                 recoMinusTrueRBins->hist->Write();
       } 
