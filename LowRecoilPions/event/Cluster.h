@@ -28,6 +28,9 @@ public:
     int ismuon; // 1 is on muon track, 0 is off muon track
 
     double pos;
+
+    double ecalo; // Passive corrected energy (calorimetric)
+    int subdet;
 };
 
 Cluster::Cluster(const CVUniverse &univ, int &ci)
@@ -38,13 +41,8 @@ Cluster::Cluster(const CVUniverse &univ, int &ci)
     	pos    = univ.GetVecElem("cluster_pos", ci); // in mm
     	zpos   = univ.GetVecElem("cluster_z", ci); // in mm
     	view   = univ.GetVecElem("cluster_view", ci); // 1 = X view, 2 = U view, 3 = V view
-        
-	//energy = univ.GetVecElem("FittedMichel_cluster_energy", ci);          // MeV
-        //time   = univ.GetVecElem("FittedMichel_cluster_time", ci) / pow(10, 3); // microseconds
-        //pos    = univ.GetVecElem("FittedMichel_cluster_pos", ci); // in mm
-        //zpos   = univ.GetVecElem("FittedMichel_cluster_z", ci); // in mm
-        //view   = univ.GetVecElem("FittedMichel_cluster_view", ci); // 1 = X view, 2 = U view, 3 = V view
-	//ismuon = 0; 
+        //subdet = univ.GetVecElem("cluster_subdet", ci); // 1 = nuke, 2 = tracker, 3 = ecal, 4  = hcal
+        //ecalo = univ.GetVecElem("cluster_ecalo", ci); // passive material corrected energy of cluster      
 }
 
 

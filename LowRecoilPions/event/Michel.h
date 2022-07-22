@@ -531,9 +531,10 @@ void Michel::DoesMichelMatchClus(const CVUniverse& univ){
   int x2_idx = -1;
   int u2_idx = -1;
   int v2_idx = -1;
-    
+  const double minZ = 5980, maxZ = 8422; 
   for (int i = 0; i < nclusters; i++){
 
+    /*
     Cluster current_cluster = Cluster(univ, i);
 
     double energy = current_cluster.energy;
@@ -543,11 +544,23 @@ void Michel::DoesMichelMatchClus(const CVUniverse& univ){
     int view = current_cluster.view;
     double timediff = micheltime - time;
     int ismuon = current_cluster.ismuon;
+    */
 
+
+    double energy = univ.GetVecElem("cluster_energy", i);
+    double time = univ.GetVecElem("cluster_time", i) / pow(10, 3);  
+    double pos = univ.GetVecElem("cluster_pos", i);   
+    double zpos = univ.GetVecElem("cluster_z", i);  
+    int view = univ.GetVecElem("cluster_view", i);
+    double timediff = micheltime - time;
+    int ismuon = univ.GetVecElem("cluster_isMuontrack", i);
+    
     if (ismuon !=0) continue; // check to make sure cluster is not on muon track, 0 is muon, 1 isnot muon
 
     if (energy < 2.) continue; // only get clusters greater than 2 MeV
     
+    if (zpos < minZ || zpos > maxZ) continue; //Require the matched clusters also be in tracker  TODO: July 20, 2022 - Change if Kevin says this doesnt make sense 
+ 
     //std::cout << "printing cluster info " << "energy " << energy << " time " << time << " pos " << pos << " zpos " << zpos << std::endl;
 
     double zdiff1 = abs(zpos - michelz1);
@@ -637,8 +650,9 @@ void Michel::DoesMichelMatchClus(const CVUniverse& univ){
  std::vector<double> clusv2;
  for (int i = 0; i < nclusters; i++){
 
+    /*
     Cluster current_cluster = Cluster(univ, i);
-
+    
     double energy = current_cluster.energy;
     double time = current_cluster.time;  
     double pos = current_cluster.pos;   
@@ -646,6 +660,15 @@ void Michel::DoesMichelMatchClus(const CVUniverse& univ){
     int view = current_cluster.view;
     double timediff = micheltime - time;
     double ismuon = current_cluster.ismuon;
+    */
+    double energy = univ.GetVecElem("cluster_energy", i);
+    double time = univ.GetVecElem("cluster_time", i) / pow(10, 3);  
+    double pos = univ.GetVecElem("cluster_pos", i);  
+    double zpos = univ.GetVecElem("cluster_z", i);  
+    int view = univ.GetVecElem("cluster_view", i);
+    double timediff = micheltime - time;
+    int ismuon = univ.GetVecElem("cluster_isMuontrack", i);
+
     if (ismuon != 0) continue; // Checking to see if Cluster is on Muon Track or not. 0 is on. 1 is not. 
     if (energy < 2.) continue;
  //   std::cout << "Printing details about cluster "<< i << " : "  << energy << " : " << time << " : " << pos << " : " << zpos << " : " << view << " : " << timediff << std::endl;  
@@ -654,7 +677,7 @@ void Michel::DoesMichelMatchClus(const CVUniverse& univ){
     double zdiff2 = abs(zpos - michelz2);
     
     // Saving clusters with distances equal to the closest clusters. Again, this is probably not the best way. I need to rewrite this section to just use clusters from the index I saved in the previous loop. That way I reduce the number of clusters that I have to loop over. 
-
+    Cluster current_cluster = Cluster(univ, i);
     if (view == 1)
     {
       //Endpoint 1 

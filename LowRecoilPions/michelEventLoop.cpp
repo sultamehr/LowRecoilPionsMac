@@ -1,7 +1,7 @@
-#define MC_OUT_FILE_NAME "runEventLoopMC_June242022_EavailComp_q3bin6_reweight.root"
-#define DATA_OUT_FILE_NAME "runEventLoopData_June242022_EavailComp_q3bin6_reweight.root"
-#define MC_SIDE_FILE_NAME "runEventLoopMC_June242022_Sideband_q3bin6_reweight.root"
-#define DATA_SIDE_FILE_NAME "runEventLoopDATA_June242022_Sideband_q3bin6_reweight.root"
+#define MC_OUT_FILE_NAME "runEventLoopMC_July202022_EavailComp_q3bin6_reweight.root"
+#define DATA_OUT_FILE_NAME "runEventLoopData_July202022_EavailComp_q3bin6_reweight.root"
+#define MC_SIDE_FILE_NAME "runEventLoopMC_July202022_Sideband_q3bin6_reweight.root"
+#define DATA_SIDE_FILE_NAME "runEventLoopDATA_July202022_Sideband_q3bin6_reweight.root"
 
 
 #define USAGE \
@@ -172,11 +172,11 @@ void LoopAndFillEventSelection(
             		double reco = var->GetRecoValue(*universe);
             		double truevar = var->GetTrueValue(*universe);
             		double recomtrue = reco - truevar;
-			if (recomtrue < -2000. && var->GetName() == "EAvailable") {
-		        	universe->PrintArachneLink();
-				std::cout << "Reco Available Energy is " << reco << std::endl;
-				std::cout << "True Available Energy is " << truevar << std::endl;
-			} 
+			//if (reco < 30. && recomtrue < -1000. && var->GetName() == "EAvailable") {
+		        // 	universe->PrintArachneLink();
+			//	std::cout << "Reco Available Energy is " << reco << std::endl;
+			//	std::cout << "True Available Energy is " << truevar << std::endl;
+			//} 
             		var->recoMinusTrue->FillUniverse(universe, recomtrue, weight2);
         	}
         	for(auto& var: vars2D) {
@@ -498,6 +498,7 @@ int main(const int argc, const char** argv)
   PlotUtils::Cutter<CVUniverse, MichelEvent>::reco_t  sidebands;
   PlotUtils::Cutter<CVUniverse, MichelEvent>::truth_t signalDefinition, phaseSpace;
 
+  //const double minZ = 5980, maxZ = 8590.07, apothem = 850.; // All in mm
   const double minZ = 5980, maxZ = 8422, apothem = 850; //All in mm
   //preCuts.emplace_back(new reco::ZRange<CVUniverse, MichelEvent>("Tracker", minZ, maxZ));
   preCuts.emplace_back(new reco::Apothem<CVUniverse, MichelEvent>(apothem));
@@ -522,10 +523,10 @@ int main(const int argc, const char** argv)
   //nosidebands.emplace_back(new GetClosestMichel<CVUniverse, MichelEvent>(0));
 
 
-  TFile* mc_MichelStudies = TFile::Open("June242022_EavailComp_noreweight_q3bin6_MC.root", "RECREATE");
-  TFile* data_MichelStudies = TFile::Open("June242022_EavailComp_noreweight_q3bin6_data.root", "RECREATE");
-  TFile* mc_SidebandStudies = TFile::Open("June242022_Sideband_noreweight_q3bin6_MC.root", "RECREATE");
-  TFile* data_SidebandStudies = TFile::Open("June242022_Sideband_noreweight_q3bin6_data.root", "RECREATE");
+  TFile* mc_MichelStudies = TFile::Open("July202022_EavailComp_noreweight_q3bin6_MC.root", "RECREATE");
+  TFile* data_MichelStudies = TFile::Open("July202022_EavailComp_noreweight_q3bin6_data.root", "RECREATE");
+  TFile* mc_SidebandStudies = TFile::Open("July202022_Sideband_noreweight_q3bin6_MC.root", "RECREATE");
+  TFile* data_SidebandStudies = TFile::Open("July202022_Sideband_noreweight_q3bin6_data.root", "RECREATE");
 
   signalDefinition.emplace_back(new truth::IsNeutrino<CVUniverse>());
   signalDefinition.emplace_back(new truth::IsCC<CVUniverse>());
@@ -548,7 +549,7 @@ int main(const int argc, const char** argv)
   MnvTunev1.emplace_back(new PlotUtils::MINOSEfficiencyReweighter<CVUniverse, MichelEvent>());
   MnvTunev1.emplace_back(new PlotUtils::RPAReweighter<CVUniverse, MichelEvent>());
   //TODO: Add my pion reweighter here. - Mehreen S.  Nov 22, 2021
-  MnvTunev1.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>()); 
+  //MnvTunev1.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>()); 
   PlotUtils::Model<CVUniverse, MichelEvent> model(std::move(MnvTunev1));
 
   // Make a map of systematic universes
@@ -594,15 +595,18 @@ int main(const int argc, const char** argv)
     new Variable("pzmu", "p_{||, #mu} [GeV/c]", dansPzBins, &CVUniverse::GetMuonPz, &CVUniverse::GetMuonPzTrue),
     new Variable("Emu", "E_{#mu} [GeV]", robsEmuBins, &CVUniverse::GetEmuGeV, &CVUniverse::GetElepTrueGeV),
     new Variable("q3pTdiff","[GeV]", dansPTBins, &CVUniverse::Recoq3pTdiff, &CVUniverse::GetTrueq3pTdiff),
-    new Variable("ERecoilvEavail", "Erecoil", robsRecoilBins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueEAvail),
-    new Variable("ERecoilCorrvEavail", "Erecoilcorr", robsRecoilBins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueEAvail),
+    //new Variable("ERecoilvEavail", "Erecoil", robsRecoilBins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueEAvail),
+    //new Variable("ERecoilCorrvEavail", "Erecoilcorr", robsRecoilBins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueEAvail),
     new Variable("ERecoilvq0", "Erecoilq0", robsRecoilBins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueQ0),
-    new Variable("ERecoilCorrvq0", "Erecoilcorrq0", robsRecoilBins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueQ0),
+    //new Variable("ERecoilCorrvq0", "Erecoilcorrq0", robsRecoilBins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueQ0),
     new Variable("EavailCorr", "Eavailablecorr", robsRecoilBins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueEAvail),
-    new Variable("NoPolyLineE", "NoPolyLineE", robsRecoilBins, &CVUniverse::GetNoPolylineE, &CVUniverse::GetTrueQ0),
-    new Variable("PolyLineE", "PolyLineE", robsRecoilBins, &CVUniverse::GetPolylineE, &CVUniverse::GetTrueQ0),
-    new Variable("Eavailvq0", "Eavailvq0", robsRecoilBins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueQ0) 
-   };
+    //new Variable("NoPolyLineE", "NoPolyLineE", robsRecoilBins, &CVUniverse::GetNoPolylineE, &CVUniverse::GetTrueQ0),
+    //new Variable("PolyLineE", "PolyLineE", robsRecoilBins, &CVUniverse::GetPolylineE, &CVUniverse::GetTrueQ0),
+    new Variable("Eavailvq0", "Eavailvq0", robsRecoilBins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueQ0),
+    new Variable("NewEAvail", "NewEAvail", robsRecoilBins, &CVUniverse::NewEavail, &CVUniverse::GetTrueEAvail), 
+    new Variable("NewRecoilE", "NewRecoilE", robsRecoilBins, &CVUniverse::NewRecoilE, &CVUniverse::GetTrueQ0),
+    new Variable("NewEAvailvq0", "NewEavailvq0", robsRecoilBins, &CVUniverse::NewEavail,&CVUniverse::GetTrueQ0)
+  };
    
    std::vector<Variable*> varsagain = {
     
@@ -623,27 +627,37 @@ int main(const int argc, const char** argv)
     new Variable("ERecoilvq0y", "Erecoilq0y", recoilbins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueQ0),
     new Variable("ERecoilCorrvq0y", "Erecoilcorrq0y", recoilbins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueQ0),
     new Variable("EavailCorry", "Eavailablecorry", recoilbins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueEAvail),
-    new Variable("EavailCorryq0", "Eavailablecorryq0", recoilbins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueQ0)  
-    
+    new Variable("EavailCorryq0", "Eavailablecorryq0", recoilbins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueQ0), 
+    new Variable("NewEAvail", "NewEAvail", robsRecoilBins, &CVUniverse::NewEavail, &CVUniverse::GetTrueEAvail),  
+    new Variable("NewRecoilE", "NewRecoilE", robsRecoilBins, &CVUniverse::NewRecoilE, &CVUniverse::GetTrueQ0),
+    new Variable("NewEAvailvq0", "NewEavailvq0", robsRecoilBins, &CVUniverse::NewEavail,&CVUniverse::GetTrueQ0),
+    new Variable("NewEAvaily", "NewEAvaily", recoilbins, &CVUniverse::NewEavail, &CVUniverse::GetTrueEAvail),
+    new Variable("NewRecoilEy", "NewRecoilEy", recoilbins, &CVUniverse::NewRecoilE, &CVUniverse::GetTrueQ0),
+    new Variable("NewEAvailvq0y", "NewEavailvq0y", recoilbins, &CVUniverse::NewEavail,&CVUniverse::GetTrueQ0)
   };
 
   std::vector<Variable2D*> vars2D;
-  vars2D.push_back(new Variable2D(*varsagain[6], *varsagain[1]));
-  vars2D.push_back(new Variable2D(*varsagain[6], *varsagain[3]));//For some reason this is not printing correctly
-  vars2D.push_back(new Variable2D(*varsagain[1], *varsagain[3]));
-  vars2D.push_back(new Variable2D(*varsagain[6], *varsagain[2]));
-  vars2D.push_back(new Variable2D(*varsagain[6], *varsagain[4]));
-  vars2D.push_back(new Variable2D(*varsagain[1], *varsagain[2]));
-  vars2D.push_back(new Variable2D(*varsagain[1], *varsagain[4]));	
-  vars2D.push_back(new Variable2D(*varsagain[1], *varsagain[0]));  
-  vars2D.push_back(new Variable2D(*varsagain[3], *varsagain[0]));
-  vars2D.push_back(new Variable2D(*varsagain[3], *varsagain[3]));
+  vars2D.push_back(new Variable2D(*varsagain[6], *varsagain[1])); // ptmu bins vs pt
+  vars2D.push_back(new Variable2D(*varsagain[6], *varsagain[3]));// ptmubins vs Eavail For some reason this is not printing correctly
+  //vars2D.push_back(new Variable2D(*varsagain[1], *varsagain[3]));// ptmu vs Eavail
+  vars2D.push_back(new Variable2D(*varsagain[6], *varsagain[2])); // ptmu bins vs q3
+  vars2D.push_back(new Variable2D(*varsagain[6], *varsagain[4])); // ptmu bins vs pz
+  //vars2D.push_back(new Variable2D(*varsagain[1], *varsagain[2])); // ptmu bins vs q2
+  //vars2D.push_back(new Variable2D(*varsagain[1], *varsagain[4])); 
+  //vars2D.push_back(new Variable2D(*varsagain[1], *varsagain[0]));  
+  //vars2D.push_back(new Variable2D(*varsagain[3], *varsagain[0]));
+  //vars2D.push_back(new Variable2D(*varsagain[3], *varsagain[3]));
   vars2D.push_back(new Variable2D(*varsagain[7], *varsagain[12]));
-  vars2D.push_back(new Variable2D(*varsagain[8], *varsagain[13]));
+  //vars2D.push_back(new Variable2D(*varsagain[8], *varsagain[13]));
   vars2D.push_back(new Variable2D(*varsagain[9], *varsagain[14])); 
-  vars2D.push_back(new Variable2D(*varsagain[10], *varsagain[15]));
+  //vars2D.push_back(new Variable2D(*varsagain[10], *varsagain[15]));
   vars2D.push_back(new Variable2D(*varsagain[11], *varsagain[16]));
-  vars2D.push_back(new Variable2D(*vars[14], *varsagain[17])); // Eavail vs true q0 in recoilbins
+  vars2D.push_back(new Variable2D(*varsagain[3], *varsagain[17])); // Eavail vs true q0 in recoilbins
+  vars2D.push_back(new Variable2D(*varsagain[18], *varsagain[21])); //New Eavail vs true Eavail in recoil bins y;
+  vars2D.push_back(new Variable2D(*varsagain[19], *varsagain[22])); // New RecoilE vs true q0 in recoil bins y;
+  vars2D.push_back(new Variable2D(*varsagain[20], *varsagain[23])); // New Eavail vs true q0 in recoil bins y;
+   
+
 
   std::vector<Variable*> sidevars = {
     new Variable("pTmu", "p_{T, #mu} [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue),
@@ -1120,11 +1134,11 @@ std::function<double(const CVUniverse&, const MichelEvent&, const int)> true_ang
    studies.push_back(new PerMichelVarByGENIELabel(true_angle_range2, "true_angle_range2", "cos(#theta)", 21, -1.0, 1., error_bands));
    studies.push_back(new PerMichelVarByGENIELabel(true_angle_range3, "true_angle_range3", "cos(#theta)", 21, -1.0, 1., error_bands));
    studies.push_back(new PerMichelVarByGENIELabel(true_angle_range4, "true_angle_range4", "cos(#theta)", 21, -1.0, 1., error_bands));
-   studies.push_back(new PerMichelVarByGENIELabel(pion_angle, "pion_angle", "cos(#theta)", 21, -1.0, 1., error_bands));
-   studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range1, "pion_angle_range1", "cos(#theta)", 21, -1.0, 1., error_bands));
-   studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range2, "pion_angle_range2", "cos(#theta)", 21, -1.0, 1., error_bands));
-   studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range3, "pion_angle_range3", "cos(#theta)", 21, -1.0, 1., error_bands));
-   studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range4, "pion_angle_range4", "cos(#theta)", 21, -1.0, 1., error_bands));
+   //studies.push_back(new PerMichelVarByGENIELabel(pion_angle, "pion_angle", "cos(#theta)", 21, -1.0, 1., error_bands));
+   //studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range1, "pion_angle_range1", "cos(#theta)", 21, -1.0, 1., error_bands));
+   //studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range2, "pion_angle_range2", "cos(#theta)", 21, -1.0, 1., error_bands));
+   //studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range3, "pion_angle_range3", "cos(#theta)", 21, -1.0, 1., error_bands));
+   //studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range4, "pion_angle_range4", "cos(#theta)", 21, -1.0, 1., error_bands));
 
    studies.push_back(new PerMichelVarVec(michel_XZ, "best_XZ", "mm", nbinsrange, rangebins, error_bands));
    studies.push_back(new PerMichelVarVec(michel_UZ, "best_UZ", "mm", nbinsrange, rangebins, error_bands));
@@ -1162,6 +1176,14 @@ std::function<double(const CVUniverse&, const MichelEvent&, const int)> true_ang
    eVarConfig2D pTconfig{"pT_reco", "GeV", nq3mbins, mehreenQ3Bins};
    eVarConfig2D erangeconfig{"ePirange", "mm", nbinsrange, rangebins};
    eVarConfig2D etpiconfig{"ePion_KE", "MeV", nbinstpi, tpibins};
+   std::vector<double> anglebins = {-1.2,-1, -.80, -.70, -.60, -.50, -.40, -.30, -.20, -.10, 0., .10, .20, .30, .40,.50,.60,.70,.80,.90,1.,1.2};
+   int nbinsangle = anglebins.size() -1;
+   studies.push_back(new PerMichelVarVecFSPart(pion_angle, "pion_angle", "cos(#theta)", nbinsangle,anglebins, error_bands));
+   studies.push_back(new PerMichelVarVecFSPart(pion_angle_range1, "pion_angle_range1", "cos(#theta)", nbinsangle,anglebins, error_bands));
+   studies.push_back(new PerMichelVarVecFSPart(pion_angle_range2, "pion_angle_range2", "cos(#theta)", nbinsangle,anglebins, error_bands));
+   studies.push_back(new PerMichelVarVecFSPart(pion_angle_range3, "pion_angle_range3", "cos(#theta)", nbinsangle,anglebins, error_bands));
+   studies.push_back(new PerMichelVarVecFSPart(pion_angle_range4, "pion_angle_range4", "cos(#theta)",nbinsangle,anglebins , error_bands));
+
    studies.push_back(new PerMichelVarVec(permichel_range,"permichel_pirange", "mm",nbinsrange, rangebins, error_bands));
    studies.push_back(new PerMichelVarVec(permichel_tpi,"permichel_tpi", "MeV", nbinstpi, tpibins, error_bands)); 
    studies.push_back(new PerMichelVarVecFSPart(permichel_range, "permichel_pirange_npi", "mm", nbinsrange, rangebins, error_bands));

@@ -17,13 +17,14 @@
 #include <iostream>
 
 #include "PlotUtils/MinervaUniverse.h"
-
+//#include "event/Cluster.h"
 class CVUniverse : public PlotUtils::MinervaUniverse {
 
   public:
   #include "PlotUtils/MuonFunctions.h" // GetMinosEfficiencyWeight
   #include "PlotUtils/TruthFunctions.h" //Getq3True
   #include "PlotUtils/LowRecoilFunctions.h" // GetEAvailable()
+  
   // ========================================================================
   // Constructor/Destructor
   // ========================================================================
@@ -243,7 +244,8 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
     double q2reco = 2.*enu*(GetEmuGeV() - pmucos ) - (M_mu*M_mu);
     //std::cout << "Print RecoilSummedE" << GetRecolE() <<  " Print Ehad: " << GetEHad() << " Print q2reco: " << q2reco << " Print EAvail: " << GetEavail() << std::endl;
     //double q2reco = GetDouble("qsquared_recoil");
-    return q2reco;
+    
+    return  q2reco; // TODO: July 20, 2022 Check Using Hang Su's Low recoil function; //q2reco;
   }
   
   virtual double GetQ2RecoMeV() const{
@@ -262,7 +264,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
     //std::cout << " Dan's EHad is " << eavail << " Q2 is " << q2 << std::endl;
     double q3mec = sqrt(eavail*eavail + q2);
     //std::cout << "Print TrueEavail: " << GetTrueEAvail() <<  " Print RecoilE: " << GetRecoilE() << " Print q2reco: " << GetQ2Reco() << " Print EAvail: " << GetEavail() << " Print q3: " << q3mec  << std::endl;
-    return q3mec;
+    return  q3mec; // Using Hang's q3 definition TODO: check to see if using Hang's definition is ok. //q3mec;
   }
    
   virtual int GetCurrent() const { return GetInt("mc_current"); }
@@ -347,7 +349,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
 
  }
 
- virtual int GetTrueLowestTpiEvent() const {
+ virtual double GetTrueLowestTpiEvent() const {
     double tpi = 999999.;
     int pdgsize = GetInt("mc_nFSPart");
     for (int i = 0; i< pdgsize; i++)
@@ -450,8 +452,85 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
  }
 
 
-  
+ virtual double GetClusterEnergyTracker() const
+ {
+    int nclusters = GetInt("cluster_view_sz");
+    double totenergy = 0.0;
+    for (int i = 0; i < nclusters; i++){
+    	double time = GetVecElem("cluster_time", i); 
+        double vtxtime = GetVertex().T(); //mus
+    	double timediff = vtxtime - time;
+    	int ismuon = GetVecElem("cluster_isMuontrack", i);
+    	double ecal = GetVecElem("cluster_ecalo", i);
+	int subdet = GetVecElem("cluster_subdet", i);
+	if (subdet != 2) continue; 
+   	if (ismuon !=0) continue; // check to make sure cluster is not on muon track, 0 is not muon, 1 is muon
+        if (timediff < -20 || timediff > 30) continue;
+        totenergy += ecal;     
+    }
+    return totenergy;
+ }
 
+ virtual double GetClusterEnergyECAL() const
+ {
+    double totenergy = 0.0;
+    int nclusters = GetInt("cluster_view_sz"); 
+    for (int i = 0; i < nclusters; i++){
+ 	double time = GetVecElem("cluster_time", i); //mus
+        double vtxtime = GetVertex().T(); //mus
+        double timediff = vtxtime - time;
+        int ismuon = GetVecElem("cluster_isMuontrack", i);
+        double ecal = GetVecElem("cluster_ecalo", i);
+        int subdet = GetVecElem("cluster_subdet", i);
+        if (timediff < -20 || timediff > 30) continue;
+        if (subdet != 3) continue;
+        if (ismuon !=0) continue; // check to make sure cluster is not on muon track, 0 is not muon, 1 is muon
+        totenergy += ecal;
+    }
+    return totenergy;
+ }
+ 
+ virtual double GetTrackerMuFuzz() const
+ {
+    double mufuzz = 0;
+    int nfuzz = GetInt("muon_fuzz_per_plane_r80_planeIDs_sz");
+    for (int i =0; i < nfuzz; i++){
+	int planeID = GetVecElem("muon_fuzz_per_plane_r80_planeIDs", i);
+	double fuzze = GetVecElem("muon_fuzz_per_plane_r80_energies", i);
+ 	if (planeID < 1504968704 || planeID > 1560805376) continue; //sum fuzz for only in Tracker
+	mufuzz += fuzze;
+    }
+    return mufuzz;
+ } 
+
+ virtual double GetECALMuFuzz() const
+ {
+    double mufuzz = 0;
+    int nfuzz = GetInt("muon_fuzz_per_plane_r80_planeIDs_sz");
+    for (int i =0; i < nfuzz; i++){
+        int planeID = GetVecElem("muon_fuzz_per_plane_r80_planeIDs", i);
+        double fuzze = GetVecElem("muon_fuzz_per_plane_r80_energies", i);
+        if (planeID < 1700003840 || planeID > 1709703168) continue; //sum fuzz for only in Tracker
+        mufuzz += fuzze;
+    }
+    return mufuzz;
+ }
+
+ virtual double NewEavail() const
+ {
+    double recoiltracker = GetClusterEnergyTracker() - GetTrackerMuFuzz();
+    double recoilEcal = GetClusterEnergyECAL() - GetECALMuFuzz();
+    const double Eavailable_scale = 1.17;
+    double eavail = recoiltracker + recoilEcal;
+    return eavail*Eavailable_scale;
+ }
+
+ virtual double NewRecoilE() const
+ {
+    return  NewEavail() + M_pi;
+
+ } 
+ 
  virtual double GetTrueEAvail() const
  {
      double Eavail = 0.0;
@@ -460,17 +539,56 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
      {
         int pdg = abs(GetVecElem("mc_FSPartPDG", i));  
         double energy = GetVecElem("mc_FSPartE", i); // hopefully this is in MeV
+        /* 
+        if(abs(pdg) == 211){ // charged pions (kinetic energy)
+          double kinetic_energy = energy - M_pi;
+          Eavail += kinetic_energy;
+        } 
+        else if (abs(pdg) == 311 or pdg == 321){
+	  // Add Kaons
+	  double KE = energy - 497.611/2.0;
+	  Eavail += KE;
+        }
+        else if (pdg == 2212){ // protons (kinetic energy)
+          double kinetic_energy = energy - M_p;
+	  Eavail += kinetic_energy;
+        }
+        else if ((pdg == 111) or (abs(pdg) == 11) or (pdg == 22)){
+	  // neutral pions, photons, electrons and positrons (total energy)
+	  Eavail += energy;
+      	} 
+        else if (pdg > 1000000000){
+          // do nothing for nucleons, assume negligible,
+          Eavail += 0;
+        }
+        else if (pdg >= 2000){
+ 	 //Strange Baryons
+         double kinetic_energy = energy - M_p;
+	 Eavail += kinetic_energy;
+        }
+        else if (pdg <= -2000){
+	 // antibaryons, primarily -2112 and -2212s
+	 Eavail += energy + M_p;
+	}
+        else { // Get any other particle. strange mesons?
+   	 Eavail += energy;
+        }
+        */	  
         if (pdg == 211) Eavail+= energy - 139.57; // subtracting pion mass to get Kinetic energy
-        if (pdg == 2212) Eavail += energy - 938.28; // proton
-        if (pdg == 111) Eavail += energy; // pi0
-        if (pdg == 22) Eavail += energy; // photons
-        if (pdg == 311) Eavail += energy - 497.611/2.0; // K0 ???? - Kaon rest mass / 2
-        if (pdg == 321) Eavail += energy - 497.611/2.0; // Kaon+ Kinetic Energy  divide by Kmass/2 
-        if (pdg == 551) Eavail += energy; //Adding etas
+        else if (pdg == 2212) Eavail += energy - 938.28; // proton
+        else if (pdg == 111) Eavail += energy; // pi0
+        else if (pdg == 22) Eavail += energy; // photons
+        else if (pdg == 311) Eavail += energy - 497.611/2.0; // K0 ???? - Kaon rest mass / 2
+        else if (pdg == 321) Eavail += energy - 497.611/2.0; // Kaon+ Kinetic Energy  divide by Kmass/2 
+        else if (pdg == 551) Eavail += energy; //Adding etas
+         
      }
-
+     //std::cout << "True Eavail is " << Eavail << " --- Reco Eavail is " << GetEavail() << "New EAvail is " << GetNewEavail() << std::endl;
      return Eavail; // in MeV
  }
+
+
+ 
 
 
   //Still needed for some systematics to compile, but shouldn't be used for reweighting anymore.
