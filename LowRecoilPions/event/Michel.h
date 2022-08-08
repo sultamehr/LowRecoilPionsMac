@@ -165,9 +165,9 @@ Michel::Michel(const CVUniverse& univ, int ci)
   true_initialz = univ.GetVecElem("FittedMichel_reco_micheltrajectory_initialz", ci);
   is_overlay = univ.GetVecElem("FittedMichel_michel_isoverlay", ci); 
   true_e = univ.GetVecElem("FittedMichel_reco_micheltrajectory_energy", ci);
-  true_pdg = univ.GetVecElem("FittedMichel_reco_micheltrajectory_pdg", ci);
-  true_parentpdg = univ.GetVecElem("FittedMichel_true_primaryparent_pdg", ci);
-  true_parentid = univ.GetVecElem("FittedMichel_true_primaryparent_trackID", ci); 
+  true_pdg = univ.GetVecElemInt("FittedMichel_reco_micheltrajectory_pdg", ci);
+  true_parentpdg = univ.GetVecElemInt("FittedMichel_true_primaryparent_pdg", ci);
+  true_parentid = univ.GetVecElemInt("FittedMichel_true_primaryparent_trackID", ci); 
   true_p = univ.GetVecElem("FittedMichel_reco_micheltrajectory_momentum", ci);
   
   double true_parentp = univ.GetVecElem("FittedMichel_true_primaryparent_momentum", ci);
@@ -559,7 +559,8 @@ void Michel::DoesMichelMatchClus(const CVUniverse& univ){
 
     if (energy < 2.) continue; // only get clusters greater than 2 MeV
     
-    if (zpos < minZ || zpos > maxZ) continue; //Require the matched clusters also be in tracker  TODO: July 20, 2022 - Change if Kevin says this doesnt make sense 
+    if (timediff < 0.) continue;
+    //if (zpos < minZ || zpos > maxZ) continue; //Require the matched clusters also be in tracker  TODO: July 20, 2022 - Change if Kevin says this doesnt make sense 
  
     //std::cout << "printing cluster info " << "energy " << energy << " time " << time << " pos " << pos << " zpos " << zpos << std::endl;
 
@@ -672,7 +673,7 @@ void Michel::DoesMichelMatchClus(const CVUniverse& univ){
     if (ismuon != 0) continue; // Checking to see if Cluster is on Muon Track or not. 0 is on. 1 is not. 
     if (energy < 2.) continue;
  //   std::cout << "Printing details about cluster "<< i << " : "  << energy << " : " << time << " : " << pos << " : " << zpos << " : " << view << " : " << timediff << std::endl;  
- 
+    if (timediff < 0.) continue; 
     double zdiff1 = abs(zpos - michelz1);
     double zdiff2 = abs(zpos - michelz2);
     

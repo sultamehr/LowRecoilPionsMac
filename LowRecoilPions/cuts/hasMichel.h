@@ -19,6 +19,7 @@ class hasMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
     {
       evt.m_allmichels.clear();
       int nmichels = univ.GetNMichels();
+      if (nmichels == 0) continue;
       evt.m_bestdist = 9999.; // setting some default value for best distance
       for (int i = 0; i < nmichels; ++i)
       {

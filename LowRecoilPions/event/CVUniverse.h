@@ -239,7 +239,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   virtual double GetQ2Reco() const{
     //double q2reco = GetDouble("MasterAnaDev_Q2_Inclusive")/pow(10,6);
     
-    double enu = GetEmuGeV() + GetRecoilE()/1000.;
+    double enu = GetEmuGeV() + NewRecoilE()/1000.;
     double pmucos = (GetPmu()/1000.)*cos(GetThetamu());
     double q2reco = 2.*enu*(GetEmuGeV() - pmucos ) - (M_mu*M_mu);
     //std::cout << "Print RecoilSummedE" << GetRecolE() <<  " Print Ehad: " << GetEHad() << " Print q2reco: " << q2reco << " Print EAvail: " << GetEavail() << std::endl;
@@ -259,7 +259,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   //}
   
   virtual double Getq3() const{
-    double eavail = GetRecoilE()/1000.;
+    double eavail = NewRecoilE()/1000.;
     double q2 = GetQ2Reco();
     //std::cout << " Dan's EHad is " << eavail << " Q2 is " << q2 << std::endl;
     double q3mec = sqrt(eavail*eavail + q2);
@@ -452,45 +452,49 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
  }
 
 
- virtual double GetClusterEnergyTracker() const
+ double GetClusterEnergyTracker() const
  {
     int nclusters = GetInt("cluster_view_sz");
     double totenergy = 0.0;
     for (int i = 0; i < nclusters; i++){
+	int ismuon = GetVecElemInt("cluster_isMuontrack", i);
+	if (ismuon != 0) continue;
     	double time = GetVecElem("cluster_time", i); 
         double vtxtime = GetVertex().T(); //mus
     	double timediff = vtxtime - time;
-    	int ismuon = GetVecElem("cluster_isMuontrack", i);
+    	//int ismuon = GetVecElemInt("cluster_isMuontrack", i);
     	double ecal = GetVecElem("cluster_ecalo", i);
 	int subdet = GetVecElem("cluster_subdet", i);
 	if (subdet != 2) continue; 
-   	if (ismuon !=0) continue; // check to make sure cluster is not on muon track, 0 is not muon, 1 is muon
-        if (timediff < -20 || timediff > 30) continue;
+   	//if (ismuon !=0) continue; // check to make sure cluster is not on muon track, 0 is not muon, 1 is muon
+        if (timediff < -20. || timediff > 30.) continue;
         totenergy += ecal;     
     }
     return totenergy;
  }
 
- virtual double GetClusterEnergyECAL() const
+ double GetClusterEnergyECAL() const
  {
     double totenergy = 0.0;
     int nclusters = GetInt("cluster_view_sz"); 
     for (int i = 0; i < nclusters; i++){
- 	double time = GetVecElem("cluster_time", i); //mus
+ 	int ismuon = GetVecElemInt("cluster_isMuontrack", i);
+	if (ismuon != 0) continue;
+        double time = GetVecElem("cluster_time", i); //mus
         double vtxtime = GetVertex().T(); //mus
         double timediff = vtxtime - time;
-        int ismuon = GetVecElem("cluster_isMuontrack", i);
+        //int ismuon = GetVecElemInt("cluster_isMuontrack", i);
         double ecal = GetVecElem("cluster_ecalo", i);
         int subdet = GetVecElem("cluster_subdet", i);
-        if (timediff < -20 || timediff > 30) continue;
+        if (timediff < -20. || timediff > 30.) continue;
         if (subdet != 3) continue;
-        if (ismuon !=0) continue; // check to make sure cluster is not on muon track, 0 is not muon, 1 is muon
+        //if (ismuon !=0) continue; // check to make sure cluster is not on muon track, 0 is not muon, 1 is muon
         totenergy += ecal;
     }
     return totenergy;
  }
  
- virtual double GetTrackerMuFuzz() const
+ double GetTrackerMuFuzz() const
  {
     double mufuzz = 0;
     int nfuzz = GetInt("muon_fuzz_per_plane_r80_planeIDs_sz");
@@ -503,14 +507,14 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
     return mufuzz;
  } 
 
- virtual double GetECALMuFuzz() const
+ double GetECALMuFuzz() const
  {
     double mufuzz = 0;
     int nfuzz = GetInt("muon_fuzz_per_plane_r80_planeIDs_sz");
     for (int i =0; i < nfuzz; i++){
         int planeID = GetVecElem("muon_fuzz_per_plane_r80_planeIDs", i);
         double fuzze = GetVecElem("muon_fuzz_per_plane_r80_energies", i);
-        if (planeID < 1700003840 || planeID > 1709703168) continue; //sum fuzz for only in Tracker
+        if (planeID < 1700003840 || planeID > 1709703168) continue; //sum fuzz for only in ECAL
         mufuzz += fuzze;
     }
     return mufuzz;
@@ -518,8 +522,10 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
 
  virtual double NewEavail() const
  {
-    double recoiltracker = GetClusterEnergyTracker() - GetTrackerMuFuzz();
-    double recoilEcal = GetClusterEnergyECAL() - GetECALMuFuzz();
+    double recoiltracker =  GetDouble("blob_recoil_E_tracker") -  GetTrackerMuFuzz(); 
+    //double recoiltracker = GetClusterEnergyTracker() - GetTrackerMuFuzz();
+    double recoilEcal = GetDouble("blob_recoil_E_ecal") - GetECALMuFuzz();
+    //double recoilEcal = GetClusterEnergyECAL() - GetECALMuFuzz();
     const double Eavailable_scale = 1.17;
     double eavail = recoiltracker + recoilEcal;
     return eavail*Eavailable_scale;
@@ -527,7 +533,14 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
 
  virtual double NewRecoilE() const
  {
-    return  NewEavail() + M_pi;
+
+    double recoil = NewEavail() + M_pi;
+    double newrecoil = recoil;
+    //if (recoil > 75. and recoil < 300.) newrecoil = recoil - 75.;
+    //else if(recoil > 300. and recoil < 600.) newrecoil = recoil - 25.;
+    //else if(recoil > 600. and recoil < 1000.) newrecoil = recoil + 25.;
+    //else if(recoil > 1000.) newrecoil = recoil + 175.;
+    return  newrecoil;
 
  } 
  
@@ -574,14 +587,15 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
    	 Eavail += energy;
         }
         */	  
-        if (pdg == 211) Eavail+= energy - 139.57; // subtracting pion mass to get Kinetic energy
-        else if (pdg == 2212) Eavail += energy - 938.28; // proton
+        if (abs(pdg) == 211) Eavail+= energy - 139.57; // subtracting pion mass to get Kinetic energy
+        else if (abs(pdg) == 2212) Eavail += energy - 938.28; // proton
         else if (pdg == 111) Eavail += energy; // pi0
         else if (pdg == 22) Eavail += energy; // photons
         else if (pdg == 311) Eavail += energy - 497.611/2.0; // K0 ???? - Kaon rest mass / 2
-        else if (pdg == 321) Eavail += energy - 497.611/2.0; // Kaon+ Kinetic Energy  divide by Kmass/2 
+        else if (abs(pdg) == 321) Eavail += energy - 497.611/2.0; // Kaon+ Kinetic Energy  divide by Kmass/2 
         else if (pdg == 551) Eavail += energy; //Adding etas
-         
+	else if (abs(pdg) !=  2112) Eavail += energy; //Adding anything else except neutrons.  
+       
      }
      //std::cout << "True Eavail is " << Eavail << " --- Reco Eavail is " << GetEavail() << "New EAvail is " << GetNewEavail() << std::endl;
      return Eavail; // in MeV

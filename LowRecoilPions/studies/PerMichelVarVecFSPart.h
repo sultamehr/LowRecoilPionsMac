@@ -28,9 +28,14 @@ class PerMichelVarVecFSPart: public Study
   public:
     //PerMichelVarByGENIELabel fills a histogram with 1 entry per Michel with some variable calculated from that Michel.  Your function will get to see the CVUniverse, the MichelEvent (= reconstructed Michels), and which Michel it's looping over.
     using reco_t = std::function<double(const CVUniverse&, const MichelEvent&, const int)>;
-    PerMichelVarVecFSPart(reco_t reco, const std::string& varName, const std::string& varUnits,int& nbins,std::vector<double>& binvec, std::map<std::string, std::vector<CVUniverse*>>& univs): Study(), fReco(reco), dataHist(new HIST((varName+"_data").c_str(), (varName + "_" + varUnits).c_str(),nbins, binvec, univs)), totalMCHist(new HIST((varName+"_MC").c_str(), (varName + "_" + varUnits + "_").c_str(), nbins, binvec, univs)), fSignalByPionsInVar(pionFSCategories,("npi_"+varName).c_str(),varName,binvec,univs) 
+    PerMichelVarVecFSPart(reco_t reco, const std::string& varName, const std::string& varUnits,int& nbins,std::vector<double>& binvec, std::map<std::string, std::vector<CVUniverse*>>& univs): Study(), fReco(reco), dataHist(new HIST((varName+"_data").c_str(), (varName + "_" + varUnits).c_str(),nbins, binvec, univs)), totalMCHist(new HIST((varName+"_MC").c_str(), (varName + "_" + varUnits + "_").c_str(), nbins, binvec, univs)), fSignalByPionsInVar(pionFSCategories,(varName+"_top").c_str(),varName,binvec,univs) 
     {
-        
+        std::map<int, std::string> GENIELabels = {{1, "QE"},
+                                                 {8, "2p2h"},
+                                                 {2, "RES"},
+                                                 {4, "COH"},
+                                                 {3, "DIS"}}; //other category is built in for free.
+	m_VarToGENIELabel = new util::Categorized<HIST, int>(("GENIE_"+varName).c_str(), varName + "_" + varUnits, GENIELabels, nbins, binvec ,univs);
            
     }
     
@@ -44,6 +49,13 @@ class PerMichelVarVecFSPart: public Study
 						    Hist.SyncCVHistos(); 
 						    Hist.hist->Write();
 						});
+
+       m_VarToGENIELabel->visit([](HIST& wrapper)
+                                {
+                                  wrapper.SyncCVHistos();
+                                  wrapper.hist->Write();
+                                });
+       
        std::cout << "Drawing the DATA Histogram" << std::endl;
        dataHist->SyncCVHistos();
        dataHist->hist->Write();
@@ -67,7 +79,8 @@ class PerMichelVarVecFSPart: public Study
     HW* totalMCHist;
     //HW* truthHist;
     util::Categorized<HIST, FSCategory*> fSignalByPionsInVar;
-     
+    util::Categorized<HIST, int>* m_VarToGENIELabel;
+
     //Overriding base class functions
     //Do nothing for now...  Good place for data comparisons in the future. 
     void fillSelected(const CVUniverse& univ, const MichelEvent& evt, const double weight) {
@@ -83,7 +96,7 @@ class PerMichelVarVecFSPart: public Study
       for(size_t whichMichel = 0; whichMichel < evt.m_nmichels.size(); ++whichMichel)
       {
         (*totalMCHist).FillUniverse(&univ, fReco(univ, evt, whichMichel), weight);
-         
+        (*m_VarToGENIELabel)[univ.GetInteractionType()].FillUniverse(&univ, fReco(univ, evt, whichMichel), weight);    
         const auto pionCat = std::find_if(pionFSCategories.begin(), pionFSCategories.end(), [&univ](auto& category) { return (*category)(univ); });
         fSignalByPionsInVar[*pionCat].FillUniverse(&univ, fReco(univ,evt,whichMichel), weight);
       }

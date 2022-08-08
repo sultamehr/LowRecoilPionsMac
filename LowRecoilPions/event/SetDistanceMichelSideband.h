@@ -4,6 +4,7 @@ template <class UNIVERSE, class EVENT>
 void setDistanceMichelSidebands(const UNIVERSE& univ, EVENT& evt, const double selectedDist, const double sidebandDist)
 {
       std::vector<Michel> nmichelspass;
+      int nside;
       int npass = 0;
       for (unsigned int i = 0; i < evt.m_allmichels.size(); i++)
       {
@@ -99,7 +100,7 @@ void setDistanceMichelSidebands(const UNIVERSE& univ, EVENT& evt, const double s
          evt.m_allmichels[i].best_VZ = evt.m_allmichels[i].up_to_vertex_VZ;
          evt.m_allmichels[i].BestMatch = 1;
          evt.m_allmichels[i].Best3Ddist = evt.m_allmichels[i].up_to_vertex_dist3D;
-
+	 nside++;
         }
 	else if (distances3D[0] == evt.m_allmichels[i].down_to_vertex_dist3D){
          evt.m_allmichels[i].BestMatch = 2;
@@ -107,6 +108,7 @@ void setDistanceMichelSidebands(const UNIVERSE& univ, EVENT& evt, const double s
          evt.m_allmichels[i].best_UZ = evt.m_allmichels[i].down_to_vertex_UZ;
          evt.m_allmichels[i].best_VZ = evt.m_allmichels[i].down_to_vertex_VZ;
          evt.m_allmichels[i].Best3Ddist = evt.m_allmichels[i].down_to_vertex_dist3D;
+	 nside++;
 	}
 	else if (distances3D[0] == evt.m_allmichels[i].up_clus_michel_dist3D){
          evt.m_allmichels[i].BestMatch = 3;
@@ -114,6 +116,7 @@ void setDistanceMichelSidebands(const UNIVERSE& univ, EVENT& evt, const double s
          evt.m_allmichels[i].best_UZ = evt.m_allmichels[i].up_to_clus_VZ;
          evt.m_allmichels[i].best_VZ = evt.m_allmichels[i].up_to_clus_UZ;
          evt.m_allmichels[i].Best3Ddist = evt.m_allmichels[i].up_clus_michvtx_dist3D;
+	 nside++;
 	}
 	else if (distances3D[0] == evt.m_allmichels[i].down_clus_michel_dist3D){
          evt.m_allmichels[i].BestMatch = 4;
@@ -121,6 +124,7 @@ void setDistanceMichelSidebands(const UNIVERSE& univ, EVENT& evt, const double s
          evt.m_allmichels[i].best_XZ = evt.m_allmichels[i].down_to_clus_XZ;
          evt.m_allmichels[i].best_UZ = evt.m_allmichels[i].down_to_clus_UZ;
          evt.m_allmichels[i].best_VZ = evt.m_allmichels[i].down_to_clus_VZ;
+	 nside++;
 	}
 	else{
                 evt.m_allmichels[i].BestMatch = 0;
@@ -134,7 +138,7 @@ void setDistanceMichelSidebands(const UNIVERSE& univ, EVENT& evt, const double s
         evt.m_sidebandpass.push_back(evt.m_allmichels[i]);
       }
 
-      if (npass == 0 && !nmichelspass.empty()){ 
+      if (npass == 0 && !nmichelspass.empty() && nside > 0){ 
 	evt.sideband = 1;
  	evt.m_nmichels.clear();
 	evt.m_nmichels = nmichelspass;

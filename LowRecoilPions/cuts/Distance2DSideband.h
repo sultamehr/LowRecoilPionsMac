@@ -187,13 +187,14 @@ class Distance2DSideband: public PlotUtils::Cut<UNIVERSE, EVENT>
       //evt.m_allmichels.clear();
       //evt.m_allmichels = nmichelspass;
       //return true; 
-      if (npass == 0 && !nmichelspass.empty()){
+      if (npass < 1 && !nmichelspass.empty()){
 	//std::cout << "This Event is a SideBand " << std::endl;
 	evt.sideband = 1;
- 	//evt.m_nmichels.clear();
-	//evt.m_nmichels = nmichelspass;
+ 	evt.m_nmichels.clear();
+	evt.m_nmichels = nmichelspass;
+        return true;
       }
-      return !evt.m_allmichels.empty();
-      //else return !nmichelspass.empty();
+      //return !evt.m_allmichels.empty();
+      else return false;
     }
 };

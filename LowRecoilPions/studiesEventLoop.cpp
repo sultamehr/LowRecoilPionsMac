@@ -1,7 +1,7 @@
-#define MC_OUT_FILE_NAME "runEventLoopMC_July202022_EavailComp_q3bin6_reweight.root"
-#define DATA_OUT_FILE_NAME "runEventLoopData_July202022_EavailComp_q3bin6_reweight.root"
-#define MC_SIDE_FILE_NAME "runEventLoopMC_July202022_Sideband_q3bin6_reweight.root"
-#define DATA_SIDE_FILE_NAME "runEventLoopDATA_July202022_Sideband_q3bin6_reweight.root"
+#define MC_OUT_FILE_NAME "runEventLoopMC_July272022_EavailComp_q3bin6_reweight.root"
+#define DATA_OUT_FILE_NAME "runEventLoopData_July272022_EavailComp_q3bin6_reweight.root"
+#define MC_SIDE_FILE_NAME "runEventLoopMC_July272022_Sideband_q3bin6_reweight.root"
+#define DATA_SIDE_FILE_NAME "runEventLoopDATA_July272022_Sideband_q3bin6_reweight.root"
 
 
 #define USAGE \
@@ -116,11 +116,11 @@ enum ErrorCodes
 void LoopAndFillEventSelection(
     PlotUtils::ChainWrapper* chain,
     std::map<std::string, std::vector<CVUniverse*> > error_bands,
-    std::vector<Variable*> vars,
-    std::vector<Variable2D*> vars2D,
+    //std::vector<Variable*> vars,
+    //std::vector<Variable2D*> vars2D,
     std::vector<Study*> studies,
-    std::vector<Variable*> sidevars,
-    std::vector<Variable2D*> sidevars2D,
+    //std::vector<Variable*> sidevars,
+    //std::vector<Variable2D*> sidevars2D,
     std::vector<Study*> sideband_studies,
     PlotUtils::Cutter<CVUniverse, MichelEvent>& michelcuts,
     PlotUtils::Model<CVUniverse, MichelEvent>& model)
@@ -161,104 +161,20 @@ void LoopAndFillEventSelection(
 	    setDistanceMichelSelection(*universe, myevent, 150.);
             setClosestMichel(*universe, myevent,0);
   	    if (!myevent.m_nmichelspass.empty()){
-		for(auto& var: vars) {
-			//std::cout << "Filling Var for this universe " << i << std::endl;  
-		  	//std::cout << " Var Value is " << var->GetRecoValue(*universe) << std::endl;  
-        		var->selectedMCReco->FillUniverse(universe, var->GetRecoValue(*universe), weight2); //"Fake data" for closure
-            		(*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValue(*universe), weight2);
-            		var->FillCategHistos(*universe,var->GetRecoValue(*universe), weight2);
-            		//var->migration->FillUniverse(universe, var->GetRecoValue(*universe), var->GetTrueValue(*universe), weight2);
-            		var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValue(*universe), weight2);
-            		double reco = var->GetRecoValue(*universe);
-            		double truevar = var->GetTrueValue(*universe);
-            		double recomtrue = reco - truevar;
-            		double bias = recomtrue/truevar;
-			var->biasMCReco->FillUniverse(universe, bias, weight2);
-			var->recoMinusTrue->FillUniverse(universe, recomtrue, weight2);
-        	}
-        	for(auto& var: vars2D) {
-                	var->mcTotalHist->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
-                	(*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
-                	var->FillCategHistos(*universe,var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
-                	//var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight2);
-                	double recoX = var->GetRecoValueX(*universe);
-                	double truevarX = var->GetTrueValueX(*universe);
-                	double recomtrueX = recoX - truevarX;
-                	//double recoY = var->GetRecoValueY(*universe);
-                	//double truevarY = var->GetTrueValueY(*universe);
-                	//double recomtrueY = recoY - truevarY;
-                	double biasx = recomtrueX/truevarX;
-			var->biasMCReco->FillUniverse(universe, biasx, var->GetRecoValueY(*universe), weight2);
-			var->recoMinusTrueRBins->FillUniverse(universe, recomtrueX, var->GetRecoValueY(*universe), weight2);
-                	var->recoMinusTrueTBins->FillUniverse(universe, recomtrueX, var->GetTrueValueY(*universe), weight2);
-         	}
 
         	for(auto& study: studies) study->SelectedSignal(*universe, myevent, weight2);
 
-        	const bool isSignal = michelcuts.isSignal(*universe, weight2);
 
-		if(isSignal){
-			for(auto& var: vars)
-          		{
-				var->migration->FillUniverse(universe, var->GetRecoValue(*universe), var->GetTrueValue(*universe), weight2);
-                                var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValue(*universe), weight2);
-				var->selectedSignalReco->FillUniverse(universe, var->GetRecoValue(*universe), weight2); //Efficiency numerator in reco variables.  Useful for warping studies 
-		
-			}
-			for(auto& var: vars2D)
-          		{
-            			var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight2);
-          		}
-		} // end of if Signal()
-                else{
-          		int bkgd_ID = -1;
-          		if (universe->GetCurrent()==2)bkgd_ID=0;
-          		else bkgd_ID=1;
-
-          		for(auto& var: vars){
-
-                 		(*var->m_backgroundHists)[bkgd_ID].FillUniverse(universe, var->GetRecoValue(*universe), weight2);
-          		}
-          		for(auto& var: vars2D) (*var->m_backgroundHists)[bkgd_ID].FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
-        	} // End of else statement for if Signal
-        } // End of if SelectedMichels Not Empty
-        else{
+            } // End of if SelectedMichels Not Empty
+            else{
     	
-          //myevent.m_nmichels = myevent.m_sidebandpass;
-          setDistanceMichelSidebands(*universe, myevent, 150., 500.);
-          setClosestMichel(*universe, myevent,1);
-	  if (!myevent.m_sidebandpass.empty()){
- 	     //const double weight2 = model.GetWeight(*universe, myevent);
-             for(auto& var: sidevars) {
-                var->selectedMCReco->FillUniverse(universe, var->GetRecoValue(*universe), weight2); //"Fake data" for closure
-                (*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValue(*universe), weight2);
-                var->FillCategHistos(*universe,var->GetRecoValue(*universe), weight2);
-                var->migration->FillUniverse(universe, var->GetRecoValue(*universe), var->GetTrueValue(*universe), weight2);
-                var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValue(*universe), weight2);
-                double reco = var->GetRecoValue(*universe);
-                double truevar = var->GetTrueValue(*universe);
-                double recomtrue = reco - truevar;
-                var->recoMinusTrue->FillUniverse(universe, recomtrue, weight2);
-             }
-             for(auto& var: sidevars2D) {
-                var->mcTotalHist->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
-                (*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
-                var->FillCategHistos(*universe,var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
-                var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight2);
-                double recoX = var->GetRecoValueX(*universe);
-                double truevarX = var->GetTrueValueX(*universe);
-                double recomtrueX = recoX - truevarX;
-                double recoY = var->GetRecoValueY(*universe);
-                double truevarY = var->GetTrueValueY(*universe);
-                double recomtrueY = recoY - truevarY;
-                var->recoMinusTrueRBins->FillUniverse(universe, recomtrueX, var->GetRecoValueY(*universe), weight2);
-                var->recoMinusTrueTBins->FillUniverse(universe, recomtrueX, var->GetTrueValueY(*universe), weight2);
-             }
-             for(auto& study: sideband_studies) study->SelectedSignal(*universe, myevent, weight2);
-
- 	  }
-        } // end of else if (!cutResults[0] && evt.sideband == 1) // To fill Sideband Variables
-       } // If event passes PreCuts
+                setDistanceMichelSidebands(*universe, myevent, 150., 500.);
+                setClosestMichel(*universe, myevent,1);
+	        if (!myevent.m_sidebandpass.empty()){
+                       for(auto& study: sideband_studies) study->SelectedSignal(*universe, myevent, weight2);
+	        } // else of if sidebandpass 
+            } // end of else if (!cutResults[0] && evt.sideband == 1) // To fill Sideband Variables
+        } // If event passes PreCuts
       } // End band's universe loop
     } // End Band loop
   } //End entries loop
@@ -268,11 +184,11 @@ void LoopAndFillEventSelection(
 
 void LoopAndFillData( PlotUtils::ChainWrapper* data,
 			        std::vector<CVUniverse*> data_band,
-				std::vector<Variable*> vars,
-                                std::vector<Variable2D*> vars2D,
+				//std::vector<Variable*> vars,
+                                //std::vector<Variable2D*> vars2D,
                                 std::vector<Study*> studies,
-				std::vector<Variable*> sidevars,
-                                std::vector<Variable2D*> sidevars2D,
+				//std::vector<Variable*> sidevars,
+                                //std::vector<Variable2D*> sidevars2D,
                                 std::vector<Study*> data_sidebands,
 				PlotUtils::Cutter<CVUniverse, MichelEvent>& michelcuts)
 
@@ -294,40 +210,18 @@ void LoopAndFillData( PlotUtils::ChainWrapper* data,
       if (cutResults.all()){
       	setDistanceMichelSelection(*universe, myevent, 150.);
         setClosestMichel(*universe, myevent,0);
-        if (!myevent.m_nmichelspass.empty()){
-
+        if (!myevent.m_nmichelspass.empty() and myevent.selection ==1){
       		//std::cout << "Filling Data STudies" << std::endl;
       		for(auto& study: studies) study->Selected(*universe, myevent, 1); 
-
-      		for(auto& var: vars)
-      		{
- 			//std::cout << "Filling Data Var for This universe " << i << std::endl;
-          		//std::cout << " Var Value is " << var->GetRecoValue(*universe) << std::endl;
-			var->dataHist->FillUniverse(universe, var->GetRecoValue(*universe), 1);
-      		}
-
-      		for(auto& var: vars2D)
-      		{
-        		var->dataHist->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), 1);
-      		}
      	}	 // End of if (michelcuts.isDataSelected(*universe, myevent).all()) -> filling Selection
         else{
           setDistanceMichelSidebands(*universe, myevent, 150., 500.);
           setClosestMichel(*universe, myevent,1);
-          if (!myevent.m_sidebandpass.empty()){
+          if (!myevent.m_sidebandpass.empty() and myevent.sideband == 1){
         	for(auto& study: data_sidebands) study->Selected(*universe, myevent, 1); 
 
-        	for(auto& var: sidevars)
-        	{
-          	     var->dataHist->FillUniverse(universe, var->GetRecoValue(*universe), 1);
-        	}
-
-        	for(auto& var: sidevars2D)
-        	{
-          	    var->dataHist->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), 1);
-        	}
-     	} // End of else for Filling Sideband Variables
-       } // End of  else if no michelspass
+     	  } // End of else for Filling Sideband Variables
+        } // End of  else if no michelspass
       }// End of PreCuts Pass
     //} // End of Data Band 
    } // End of Entries
@@ -516,22 +410,23 @@ int main(const int argc, const char** argv)
   preCuts.emplace_back(new hasMichel<CVUniverse, MichelEvent>());
   //preCuts.emplace_back(new Distance2DSideband<CVUniverse, MichelEvent>(500.));
   
-  //preCuts.emplace_back(new BestMichelDistance2D<CVUniverse, MichelEvent>(150.));
-  //preCuts.emplace_back(new GetClosestMichel<CVUniverse, MichelEvent>(0));
+  preCuts.emplace_back(new BestMichelDistance2D<CVUniverse, MichelEvent>(150.));
+  preCuts.emplace_back(new GetClosestMichel<CVUniverse, MichelEvent>(0));
   //nosidebands.emplace_back(new BestMichelDistance2D<CVUniverse, MichelEvent>(150.));
   //nosidebands.emplace_back(new GetClosestMichel<CVUniverse, MichelEvent>(0));
 
 
-  TFile* mc_MichelStudies = TFile::Open("July202022_EavailComp_noreweight_q3bin6_MC.root", "RECREATE");
-  TFile* data_MichelStudies = TFile::Open("July202022_EavailComp_noreweight_q3bin6_data.root", "RECREATE");
-  TFile* mc_SidebandStudies = TFile::Open("July202022_Sideband_noreweight_q3bin6_MC.root", "RECREATE");
-  TFile* data_SidebandStudies = TFile::Open("July202022_Sideband_noreweight_q3bin6_data.root", "RECREATE");
+  TFile* mc_MichelStudies = TFile::Open("July282022_EavailComp_noreweight_pTbin6_MC.root", "RECREATE");
+  TFile* data_MichelStudies = TFile::Open("July282022_EavailComp_noreweight_pTbin6_data.root", "RECREATE");
+  TFile* mc_SidebandStudies = TFile::Open("July282022_Sideband_noreweight_pTbin6_MC.root", "RECREATE");
+  TFile* data_SidebandStudies = TFile::Open("July282022_Sideband_noreweight_pTbin6_data.root", "RECREATE");
 
   signalDefinition.emplace_back(new truth::IsNeutrino<CVUniverse>());
   signalDefinition.emplace_back(new truth::IsCC<CVUniverse>());
   signalDefinition.emplace_back(new truth::HasPion<CVUniverse>());
   //signalDefinition.emplace_back(new Q3Limit<CVUniverse>(0.0, 1.20));
-  
+  signalDefinition.emplace_back(new truth::ZRange<CVUniverse>("Tracker", minZ, maxZ));
+  signalDefinition.emplace_back(new truth::Apothem<CVUniverse>(apothem)); 
   //signalDefinition.emplace_back(new hasTruePion<CVUniverse>());                                                                                                              
   
   phaseSpace.emplace_back(new truth::ZRange<CVUniverse>("Tracker", minZ, maxZ));
@@ -586,145 +481,6 @@ int main(const int argc, const char** argv)
   const double robsRecoilBinWidth = 50; //MeV
   for(int whichBin = 0; whichBin < 30 + 1; ++whichBin) robsRecoilBins.push_back(robsRecoilBinWidth * whichBin);
 
-  std::vector<Variable*> vars = {
-    new Variable("pTmu", "p_{T, #mu} [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue),
-    new Variable("q3", "q3 [GeV]", dansPTBins, &CVUniverse::Getq3, &CVUniverse::GetTrueQ3),
-    new Variable("q2", "q2 [GeV^2]", dansPTBins, &CVUniverse::GetQ2Reco, &CVUniverse::GetTrueQ2GeV), 
-    new Variable("EAvailable", "E_{available}", robsRecoilBins, &CVUniverse::GetEavail, &CVUniverse::GetTrueEAvail),
-    new Variable("pzmu", "p_{||, #mu} [GeV/c]", dansPzBins, &CVUniverse::GetMuonPz, &CVUniverse::GetMuonPzTrue),
-    new Variable("Emu", "E_{#mu} [GeV]", robsEmuBins, &CVUniverse::GetEmuGeV, &CVUniverse::GetElepTrueGeV),
-    new Variable("q3pTdiff","[GeV]", dansPTBins, &CVUniverse::Recoq3pTdiff, &CVUniverse::GetTrueq3pTdiff),
-    //new Variable("ERecoilvEavail", "Erecoil", robsRecoilBins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueEAvail),
-    //new Variable("ERecoilCorrvEavail", "Erecoilcorr", robsRecoilBins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueEAvail),
-    new Variable("ERecoilvq0", "Erecoilq0", robsRecoilBins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueQ0),
-    //new Variable("ERecoilCorrvq0", "Erecoilcorrq0", robsRecoilBins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueQ0),
-    new Variable("EavailCorr", "Eavailablecorr", robsRecoilBins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueEAvail),
-    //new Variable("NoPolyLineE", "NoPolyLineE", robsRecoilBins, &CVUniverse::GetNoPolylineE, &CVUniverse::GetTrueQ0),
-    //new Variable("PolyLineE", "PolyLineE", robsRecoilBins, &CVUniverse::GetPolylineE, &CVUniverse::GetTrueQ0),
-    new Variable("Eavailvq0", "Eavailvq0", robsRecoilBins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueQ0),
-    new Variable("NewEAvail", "NewEAvail", robsRecoilBins, &CVUniverse::NewEavail, &CVUniverse::GetTrueEAvail), 
-    new Variable("NewRecoilE", "NewRecoilE", robsRecoilBins, &CVUniverse::NewRecoilE, &CVUniverse::GetTrueQ0),
-    new Variable("NewEAvailvq0", "NewEavailvq0", robsRecoilBins, &CVUniverse::NewEavail,&CVUniverse::GetTrueQ0)
-  };
-   
-   std::vector<Variable*> varsagain = {
-    
-    new Variable("pTmu", "pT [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue),
-    new Variable("q3", "q3 [GeV]", mehreenQ3Bins, &CVUniverse::Getq3, &CVUniverse::GetTrueQ3),
-    new Variable("q2", "q2 [GeV^2]", dansPTBins, &CVUniverse::GetQ2Reco, &CVUniverse::GetTrueQ2GeV), 
-    new Variable("EAvailable", "E_available", robsRecoilBins, &CVUniverse::GetEavail, &CVUniverse::GetTrueEAvail),
-    new Variable("pzmu", "p_z [GeV/c]", dansPzBins, &CVUniverse::GetMuonPz, &CVUniverse::GetMuonPzTrue),
-    new Variable("Emu", "E_{#mu} [GeV]", robsEmuBins, &CVUniverse::GetEmuGeV, &CVUniverse::GetElepTrueGeV),
-    new Variable("pTmubins", "pT [GeV/c]", mehreenQ3Bins,  &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue),
-    new Variable("ERecoilvEavail", "Erecoil", robsRecoilBins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueEAvail),
-    new Variable("ERecoilCorrvEavail", "Erecoilcorr", robsRecoilBins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueEAvail),
-    new Variable("ERecoilvq0", "Erecoilq0", robsRecoilBins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueQ0),
-    new Variable("ERecoilCorrvq0", "Erecoilcorrq0", robsRecoilBins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueQ0),
-    new Variable("EavailCorr", "Eavailablecorr", robsRecoilBins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueEAvail),
-    new Variable("ERecoilvEavaily", "Erecoily", recoilbins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueEAvail),
-    new Variable("ERecoilCorrvEavaily", "Erecoilcorry", recoilbins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueEAvail),
-    new Variable("ERecoilvq0y", "Erecoilq0y", recoilbins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueQ0),
-    new Variable("ERecoilCorrvq0y", "Erecoilcorrq0y", recoilbins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueQ0),
-    new Variable("EavailCorry", "Eavailablecorry", recoilbins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueEAvail),
-    new Variable("EavailCorryq0", "Eavailablecorryq0", recoilbins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueQ0), 
-    new Variable("NewEAvail", "NewEAvail", robsRecoilBins, &CVUniverse::NewEavail, &CVUniverse::GetTrueEAvail),  
-    new Variable("NewRecoilE", "NewRecoilE", robsRecoilBins, &CVUniverse::NewRecoilE, &CVUniverse::GetTrueQ0),
-    new Variable("NewEAvailvq0", "NewEavailvq0", robsRecoilBins, &CVUniverse::NewEavail,&CVUniverse::GetTrueQ0),
-    new Variable("NewEAvaily", "NewEAvaily", recoilbins, &CVUniverse::NewEavail, &CVUniverse::GetTrueEAvail),
-    new Variable("NewRecoilEy", "NewRecoilEy", recoilbins, &CVUniverse::NewRecoilE, &CVUniverse::GetTrueQ0),
-    new Variable("NewEAvailvq0y", "NewEavailvq0y", recoilbins, &CVUniverse::NewEavail,&CVUniverse::GetTrueQ0)
-  };
-
-  std::vector<Variable2D*> vars2D;
-  vars2D.push_back(new Variable2D(*varsagain[6], *varsagain[1])); // ptmu bins vs pt
-  vars2D.push_back(new Variable2D(*varsagain[6], *varsagain[3]));// ptmubins vs Eavail For some reason this is not printing correctly
-  //vars2D.push_back(new Variable2D(*varsagain[1], *varsagain[3]));// ptmu vs Eavail
-  vars2D.push_back(new Variable2D(*varsagain[6], *varsagain[2])); // ptmu bins vs q3
-  vars2D.push_back(new Variable2D(*varsagain[6], *varsagain[4])); // ptmu bins vs pz
-  //vars2D.push_back(new Variable2D(*varsagain[1], *varsagain[2])); // ptmu bins vs q2
-  //vars2D.push_back(new Variable2D(*varsagain[1], *varsagain[4])); 
-  //vars2D.push_back(new Variable2D(*varsagain[1], *varsagain[0]));  
-  //vars2D.push_back(new Variable2D(*varsagain[3], *varsagain[0]));
-  //vars2D.push_back(new Variable2D(*varsagain[3], *varsagain[3]));
-  vars2D.push_back(new Variable2D(*varsagain[7], *varsagain[12]));
-  //vars2D.push_back(new Variable2D(*varsagain[8], *varsagain[13]));
-  vars2D.push_back(new Variable2D(*varsagain[9], *varsagain[14])); 
-  //vars2D.push_back(new Variable2D(*varsagain[10], *varsagain[15]));
-  vars2D.push_back(new Variable2D(*varsagain[11], *varsagain[16]));
-  vars2D.push_back(new Variable2D(*varsagain[3], *varsagain[17])); // Eavail vs true q0 in recoilbins
-  vars2D.push_back(new Variable2D(*varsagain[18], *varsagain[21])); //New Eavail vs true Eavail in recoil bins y;
-  vars2D.push_back(new Variable2D(*varsagain[19], *varsagain[22])); // New RecoilE vs true q0 in recoil bins y;
-  vars2D.push_back(new Variable2D(*varsagain[20], *varsagain[23])); // New Eavail vs true q0 in recoil bins y;
-   
-
-
-  std::vector<Variable*> sidevars = {
-    new Variable("pTmu", "p_{T, #mu} [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue),
-    new Variable("q3", "q3 [GeV]", dansPTBins, &CVUniverse::Getq3, &CVUniverse::GetTrueQ3),
-    new Variable("q2", "q2 [GeV^2]", dansPTBins, &CVUniverse::GetQ2Reco, &CVUniverse::GetTrueQ2GeV),
-    new Variable("EAvailable", "E_{available}", robsRecoilBins, &CVUniverse::GetEavail, &CVUniverse::GetTrueEAvail),
-    new Variable("pzmu", "p_{||, #mu} [GeV/c]", dansPzBins, &CVUniverse::GetMuonPz, &CVUniverse::GetMuonPzTrue),
-    new Variable("Emu", "E_{#mu} [GeV]", robsEmuBins, &CVUniverse::GetEmuGeV, &CVUniverse::GetElepTrueGeV),
-    new Variable("q3pTdiff","[GeV]", dansPTBins, &CVUniverse::Recoq3pTdiff, &CVUniverse::GetTrueq3pTdiff),
-    new Variable("ERecoilvEavail", "Erecoil", robsRecoilBins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueEAvail),
-    new Variable("ERecoilCorrvEavail", "Erecoilcorr", robsRecoilBins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueEAvail),
-    new Variable("ERecoilvq0", "Erecoilq0", robsRecoilBins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueQ0),
-    new Variable("ERecoilCorrvq0", "Erecoilcorrq0", robsRecoilBins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueQ0),
-    new Variable("EavailCorr", "Eavailablecorr", robsRecoilBins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueEAvail)
-   };
-
-   std::vector<Variable*> sidevarsagain = {
-    
-    new Variable("pTmu", "pT [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue),
-    new Variable("q3", "q3 [GeV]", mehreenQ3Bins, &CVUniverse::Getq3, &CVUniverse::GetTrueQ3),
-    new Variable("q2", "q2 [GeV^2]", dansPTBins, &CVUniverse::GetQ2Reco, &CVUniverse::GetTrueQ2GeV), 
-    new Variable("EAvailable", "E_available", robsRecoilBins, &CVUniverse::GetEavail, &CVUniverse::GetTrueEAvail),
-    new Variable("pzmu", "p_z [GeV/c]", dansPzBins, &CVUniverse::GetMuonPz, &CVUniverse::GetMuonPzTrue),
-    new Variable("Emu", "E_{#mu} [GeV]", robsEmuBins, &CVUniverse::GetEmuGeV, &CVUniverse::GetElepTrueGeV),
-    new Variable("pTmubins", "pT [GeV/c]", mehreenQ3Bins,  &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue),
-    new Variable("ERecoilvEavail", "Erecoil", robsRecoilBins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueEAvail),
-    new Variable("ERecoilCorrvEavail", "Erecoilcorr", robsRecoilBins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueEAvail),
-    new Variable("ERecoilvq0", "Erecoilq0", robsRecoilBins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueQ0),
-    new Variable("ERecoilCorrvq0", "Erecoilcorrq0", robsRecoilBins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueQ0),
-    new Variable("EavailCorr", "Eavailablecorr", robsRecoilBins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueEAvail),
-    new Variable("ERecoilvEavaily", "Erecoily", recoilbins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueEAvail),
-    new Variable("ERecoilCorrvEavaily", "Erecoilcorry", recoilbins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueEAvail),
-    new Variable("ERecoilvq0y", "Erecoilq0y", recoilbins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueQ0),
-    new Variable("ERecoilCorrvq0y", "Erecoilcorrq0y", recoilbins, &CVUniverse::GetRecoilECorr, &CVUniverse::GetTrueQ0),
-    new Variable("EavailCorry", "Eavailablecorry", recoilbins, &CVUniverse::GetEavailCorr, &CVUniverse::GetTrueEAvail)
-  };
-
-  std::vector<Variable2D*> sidevars2D;
-  sidevars2D.push_back(new Variable2D(*sidevarsagain[6], *sidevarsagain[1]));
-  sidevars2D.push_back(new Variable2D(*sidevarsagain[6], *sidevarsagain[3]));//For some reason this is not printing correctly
-  sidevars2D.push_back(new Variable2D(*sidevarsagain[1], *sidevarsagain[3]));
-  sidevars2D.push_back(new Variable2D(*sidevarsagain[6], *sidevarsagain[2]));
-  sidevars2D.push_back(new Variable2D(*sidevarsagain[6], *sidevarsagain[4]));
-  sidevars2D.push_back(new Variable2D(*sidevarsagain[1], *sidevarsagain[2]));
-  sidevars2D.push_back(new Variable2D(*sidevarsagain[1], *sidevarsagain[4]));
-  sidevars2D.push_back(new Variable2D(*sidevarsagain[1], *sidevarsagain[0]));
-  sidevars2D.push_back(new Variable2D(*sidevarsagain[3], *sidevarsagain[0]));
-  sidevars2D.push_back(new Variable2D(*sidevarsagain[3], *sidevarsagain[3]));
-  sidevars2D.push_back(new Variable2D(*sidevarsagain[7], *sidevarsagain[12]));
-  sidevars2D.push_back(new Variable2D(*sidevarsagain[8], *sidevarsagain[13]));
-  sidevars2D.push_back(new Variable2D(*sidevarsagain[9], *sidevarsagain[14]));
-  sidevars2D.push_back(new Variable2D(*sidevarsagain[10], *sidevarsagain[15]));
-  sidevars2D.push_back(new Variable2D(*sidevarsagain[11], *sidevarsagain[16]));
-
-
-
- //vars2D.push_back(new Variable2D(vars[3],vars[0]));
-  if(doCCQENuValidation)
-  {
-    std::cerr << "Detected that tree name is CCQENu.  Making validation histograms.\n";
-    vars.push_back(new Variable("pzmu", "p_{||, #mu} [GeV/c]", dansPzBins, &CVUniverse::GetMuonPz, &CVUniverse::GetMuonPzTrue));
-    vars.push_back(new Variable("Emu", "E_{#mu} [GeV]", robsEmuBins, &CVUniverse::GetEmuGeV, &CVUniverse::GetElepTrueGeV));
-    vars.push_back(new Variable("Erecoil", "E_{recoil}", robsRecoilBins, &CVUniverse::GetRecoilE, &CVUniverse::GetTrueEAvail)); //TODO: q0 is not the same as recoil energy without a spline correction
-    
-    vars2D.push_back(new Variable2D(*vars[1], *vars[0]));
-  }
-  
-  //vars2D.push_back(new Variable2D("q3_vs_pT", "q3_vs_pT;q3;pT", &CVUniverse::GetMuonPT, &CVUniverse::Getq3, dansPTBins,dansPTBins));
 //This is where your list of Studies go for PerMichel variables -> Accessed through MichelEvent
 
   std::vector<Study*> studies;
@@ -1183,10 +939,10 @@ std::function<double(const CVUniverse&, const MichelEvent&, const int)> true_ang
    studies.push_back(new PerMichelVarVecFSPart(pion_angle_range3, "pion_angle_range3", "cos(#theta)", nbinsangle,anglebins, error_bands));
    studies.push_back(new PerMichelVarVecFSPart(pion_angle_range4, "pion_angle_range4", "cos(#theta)",nbinsangle,anglebins , error_bands));
 
-   studies.push_back(new PerMichelVarVec(permichel_range,"permichel_pirange", "mm",nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(permichel_tpi,"permichel_tpi", "MeV", nbinstpi, tpibins, error_bands)); 
-   studies.push_back(new PerMichelVarVecFSPart(permichel_range, "permichel_pirange_npi", "mm", nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVecFSPart(permichel_tpi,"permichel_tpi_npi", "MeV", nbinstpi, tpibins, error_bands));
+   //studies.push_back(new PerMichelVarVec(permichel_range,"permichel_pirange", "mm",nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(permichel_tpi,"permichel_tpi", "MeV", nbinstpi, tpibins, error_bands)); 
+   studies.push_back(new PerMichelVarVecFSPart(permichel_range, "permichel_pirange", "mm", nbinsrange, rangebins, error_bands));
+   studies.push_back(new PerMichelVarVecFSPart(permichel_tpi,"permichel_tpi", "MeV", nbinstpi, tpibins, error_bands));
 
    sideband_studies.push_back(new PerMichelVarVecFSPart(permichel_range, "permichel_pirange_npi", "mm", nbinsrange, rangebins, error_bands));
    sideband_studies.push_back(new PerMichelVarVecFSPart(permichel_tpi,"permichel_tpi_npi", "MeV", nbinstpi, tpibins, error_bands));
@@ -1372,21 +1128,11 @@ std::function<double(const CVUniverse&, const MichelEvent&)> lowesttpi = [](cons
   data_sidebands.push_back(new PerMichelEvent2DVarbin(best_pionrange, getpT, erangeconfig, pTconfig, data_error_bands)); 
    
 
-  for(auto& var: vars) var->InitializeMCHists(error_bands, truth_bands);
-  for(auto& var: vars) var->InitializeDATAHists(data_band);
-  for(auto& var: sidevars) var->InitializeDATAHists(data_band);
-  for(auto& var: sidevars) var->InitializeMCHists(error_bands, truth_bands);
-  for(auto& var: vars2D) var->InitializeMCHists(error_bands, truth_bands);
-  for(auto& var: vars2D) var->InitializeDATAHists(data_band);
-  for(auto& var: sidevars2D) var->InitializeMCHists(error_bands, truth_bands);
-  for(auto& var: sidevars2D) var->InitializeDATAHists(data_band);
-   
-
   // Loop entries and fill
   try
   {
     CVUniverse::SetTruth(false);
-    LoopAndFillEventSelection(options.m_mc, error_bands, vars, vars2D, studies, sidevars, sidevars2D, sideband_studies, mycuts, model);
+    LoopAndFillEventSelection(options.m_mc, error_bands, studies, sideband_studies, mycuts, model);
     std::cout << "MC cut summary:\n" << mycuts << "\n";
     //mycuts.resetStats();
     CVUniverse::SetTruth(true);
@@ -1395,45 +1141,20 @@ std::function<double(const CVUniverse&, const MichelEvent&)> lowesttpi = [](cons
     //std::cout << "Sideband Cut Summary:\n" << mysides << "\n";
     mycuts.resetStats();
     CVUniverse::SetTruth(false);
-    LoopAndFillData(options.m_data, data_band, vars, vars2D, data_studies, sidevars, sidevars2D, data_sidebands, mycuts);
+    LoopAndFillData(options.m_data, data_band, data_studies, data_sidebands, mycuts);
     std::cout << "Data cut summary:\n" << mycuts << "\n";
     //mycuts.resetStats();
     
     std::cout  << "Opening the MCOUTPUT for EVENT hists" << std::endl;
-    //Write MC results
-    TFile* mcOutDir = TFile::Open(MC_OUT_FILE_NAME, "RECREATE");
-    TFile* mcSideDir = TFile::Open(MC_SIDE_FILE_NAME, "RECREATE");
-    if(!mcOutDir)
-    {
-      std::cerr << "Failed to open a file named " << MC_OUT_FILE_NAME << " in the current directory for writing histograms.\n";
-      return badOutputFile;
-    }
     
-    if(!mcSideDir)
-    {
-      std::cerr << "Failed to open a file named " << MC_SIDE_FILE_NAME << " in the current directory for writing histograms.\n";
-      return badOutputFile;
-    }
     
     std::cout << "Saving Histos to MC Files" << std::endl;
     //TFile* mc_MichelStudies = TFile::Open("AllMichel_hasFittedMichel_500mm.root", "RECREATE");
     //"ALL2DDistprinted_OnlyPionMichels_tpimorethan80meV_forceendpointmatch_2Ddistcut_mc.root", "RECREATE");
     for(auto& study: studies) study->SaveOrDraw(*mc_MichelStudies);
-    std::cout << "WRiting VARS to event level file" << std::endl;
-    for(auto& var: vars) var->WriteMC(*mcOutDir);
-    std::cout << "WRiting 2D VARS to event level file " << std::endl;
-    for(auto& var: vars2D) var->Write(*mcOutDir);
-    std::cout << "Saving Histos to Data Files" << std::endl;
+    std::cout << "WRiting STUDIES to michel level file" << std::endl;
    
-    //for(auto& study: data_studies) study->SaveOrDraw(*data_MichelStudies); 
-    // Writing Sidebands now 
-    //
     for(auto& study: sideband_studies) study->SaveOrDraw(*mc_SidebandStudies);
-    std::cout << "WRiting VARS to event level file" << std::endl;
-    for(auto& var: sidevars) var->WriteMC(*mcSideDir);
-    std::cout << "WRiting 2D VARS to event level file " << std::endl;
-    for(auto& var: sidevars2D) var->Write(*mcSideDir);
-    std::cout << "Saving Histos to Data Files" << std::endl;
 
 
     //CVUniverse::SetTruth(false);
@@ -1452,54 +1173,21 @@ std::function<double(const CVUniverse&, const MichelEvent&)> lowesttpi = [](cons
     mcPOT->Write();
     mc_MichelStudies->cd();
     mcPOT->Write();
-    mcOutDir->cd();
-    mcPOT->Write();
     
-    mcSideDir->cd();
+    mc_SidebandStudies->cd();
     mcPOT->Write();
     
 
     PlotUtils::TargetUtils targetInfo;
     assert(error_bands["cv"].size() == 1 && "List of error bands must contain a universe named \"cv\" for the flux integral.");
     std::cout << "Looping over Vars to fill systematics" << std::endl;
-    for(const auto& var: vars)
-    {
-      //Flux integral only if systematics are being done (temporary solution)
-      util::GetFluxIntegral(*error_bands["cv"].front(), var->efficiencyNumerator->hist)->Write((var->GetName() + "_reweightedflux_integrated").c_str());
-      //Always use MC number of nucleons for cross section
-      auto nNucleons = new TParameter<double>((var->GetName() + "_fiducial_nucleons").c_str(), targetInfo.GetTrackerNNucleons(minZ, maxZ, true, apothem));
-      nNucleons->Write();
-    }
-    std::cout << "Writing Data Results" << std::endl;
-    //Write data results
-    TFile* dataOutDir = TFile::Open(DATA_OUT_FILE_NAME, "RECREATE");
-    TFile* dataSideDir = TFile::Open(DATA_SIDE_FILE_NAME, "RECREATE");
-    if(!dataOutDir)
-    {
-      std::cerr << "Failed to open a file named " << DATA_OUT_FILE_NAME << " in the current directory for writing histograms.\n";
-      return badOutputFile;
-    }
-    if(!dataSideDir)
-    {
-      std::cerr << "Failed to open a file named " << DATA_SIDE_FILE_NAME << " in the current directory for writing histograms.\n";
-      return badOutputFile;
-    }
 
-    std::cout << "Writing Data Vars" << std::endl;
-    for(auto& var: vars) var->WriteData(*dataOutDir);
-    for(auto& var: vars2D) var->Write(*dataOutDir);
-    for(auto& var: sidevars) var->WriteData(*dataSideDir);
-    for(auto& var: sidevars2D) var->Write(*dataSideDir); 
-   //Protons On Target
     auto dataPOT = new TParameter<double>("POTUsed", options.m_data_pot);
     dataPOT->Write();
     data_MichelStudies->cd();
     dataPOT->Write();
-    dataOutDir->cd();
+    data_SidebandStudies->cd();
     dataPOT->Write();
-    dataSideDir->cd();
-    dataPOT->Write();
-    dataSideDir->cd();
     std::cout << "Success" << std::endl;
   }
   catch(const ROOT::exception& e)

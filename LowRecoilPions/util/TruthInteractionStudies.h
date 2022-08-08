@@ -49,16 +49,14 @@ class FSCategory
 	const int interaction = univ.GetInteractionType();
 	bool failedevent = false;
 	int npi = 0;
-	if (interaction==4 && fIntType.count(interaction) == 1  && fForbidden.count(-9999) == 1){
-	    return true;
-	}
+	if (interaction==4){ return false;}
 	//else if (interaction==3){return false;}
 	else {
 		int nforbidden =0;
 		int nrequired=0;
 		for(const int pdg: univ.GetTrueFSPDGCodes())
         	{
-			if(fForbidden.count(pdg) == 1) nforbidden++;
+			if(fForbidden.count(fabs(pdg)) == 1) nforbidden++;
 			if(fRequired.size() != 0 && fRequired.count(pdg) == 1) nrequired++;
           		if (pdg == 211) npi++;
 			//if(fForbidden.count(fabs(pdg)) == 1) return false;
@@ -66,20 +64,18 @@ class FSCategory
         	 	//if(fRequired.size() != 0 && fRequired.count(fabs(pdg)) == 1) return true;	
 		}
 		
-		//if (nforbidden > 0) failedevent = true;
-		//else if (fRequired.size() != 0 && nrequired >= fRequired.size()) failedevent = false;
-		//else if (nforbidden == 0 && fRequired.empty()) failedevent = false;
-		//else failedevent = true;
+		if (nforbidden > 0) failedevent = true;
+		else if (fRequired.size() != 0 && nrequired >= fRequired.size()) failedevent = false;
+		else if (nforbidden == 0 && fRequired.empty()) failedevent = false;
+		else failedevent = true;
 		 
 		//if (failedevent = true) univ.PrintArachneLink();
 		
-	        //if (fForbidden.count(-1) == 1 && fRequired.count(211) == 1 && npi == 1) return true;
+		
 		if (nforbidden > 0) return false; // Don't pass events for this category if forbidden pdg is in event
-		else if (fIntType.count(1) == 1 && fRequired.count(211) == 1 && npi == 1) return true;
-		else if (fIntType.count(2) == 1 && fRequired.count(211) == 1 && npi > 1) return true;
-		else if (fIntType.size() == 0 && fRequired.size() != 0 && nrequired >= fRequired.size()) return true; // pass event for this category if no forbidden particles AND have required particles 
+		//else if (fForbidden.count(-1) == 1 && fRequired.count(211) == 1 && npi == 1) return true;
+		else if (fRequired.size() != 0 && nrequired >= fRequired.size()) return true; // pass event for this category if no forbidden particles AND have required particles 
 		else if (nforbidden == 0 && fRequired.empty()) return true; // Pass events that dont have forbidden particles but also dont have a required set - QE-Like for example
-		else if (fForbidden.count(9999) == 1 && nrequired >= 2 && npi >= 1) return true;
 		else return false; //if none of the above, dont fill the category
         	//return true;
 	}
@@ -94,17 +90,15 @@ class FSCategory
 
 };
 
-const std::vector<FSCategory*> pionFSCategories = {   new FSCategory("QElike", {-211, -321, -311, -111,211, 111, 321, 311}),
-                                                      new FSCategory("Single Pi Plus Only", {111,321,311, -311, -321, -111,-311,-211}, {211}, {1}),
-						      new FSCategory("N Pi Plus Only", {-211,111, 321, 311, -111,-321,-311}, {211}, {2}),
-                                                      new FSCategory("Neutral Pions Only", {321, -321, 311, -311 ,-211,211}, {111}),
-                                                      new FSCategory("Kaon Plus Only",{-211, 211, -111, 111, 311}, {321}),
-						      //new FSCategory("Pi Plus and Pi0", {311,321, -321, -311, -211}, {111, 211}),
-						      //new FSCategory("Pi Plus and Minus", {311, -311,-321, 321, 111}, {211, -211}),
-						      //new FSCategory("Pi Plus and Kaons", {111, -211}, {211, 311, -321,321}),
-						      new FSCategory("Pi Plus and Other", {9999}, {211, -211,321, -321,311,111}),	      				      
+const std::vector<FSCategory*> pionFSCategories = {   new FSCategory("QE-like", {211, 111, 321, 311}),
+                                                      //new FSCategory("Single Pi Plus", {-1}, {211}),
+						      new FSCategory("Pi Plus Only", {111, 321, 311}, {211}),
+                                                      new FSCategory("Neutral Pi Only", {321, 311, 211}, {111}),
+                                                      new FSCategory("K Plus Only",{211, 111, 311}, {321}),
+						      new FSCategory("All Pi Types", {311,321}, {111, 211, -211})
+						      					      				      
                                                       //new FSCategory("NoneAbove", {2212,211, 111, 321, 311}),
-						      new FSCategory("COH", {-9999}, {211}, {4})
+						      //new FSCategory("COH", {0}, {0}, {4})
 						  };
 
 
