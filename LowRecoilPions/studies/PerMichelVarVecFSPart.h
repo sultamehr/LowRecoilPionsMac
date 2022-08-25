@@ -9,8 +9,8 @@
 #include "util/Categorized.h"
 #include "event/CVUniverse.h"
 #include "PlotUtils/VariableBase.h"
-#include "studies/TruthInteractionStudies.h"
-
+//#include "studies/TruthInteractionStudies.h"
+#include "util/PionFSCategory.h"
 
 //Includes from this package
 //#include "event/CVUniverse.h"

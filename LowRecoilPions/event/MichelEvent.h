@@ -33,5 +33,6 @@ struct MichelEvent {
     double pT_reco = 9999.; //GeV
     int sideband = 0; // if 1: event is a sideband with no signal michels      
     int selection = 0; // if 1: event has a michel that is < 150mm in two closest views 
+    int ClosestMichelsIsOverlay = -1; // -1: not overlay, 1: overlay
 };
 #endif

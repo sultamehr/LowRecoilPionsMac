@@ -22,8 +22,10 @@ class GetClosestMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
       // evt.m_nmichels.clear();
       //if (michelgroup == 0) evt.m_nmichels = evt.m_nmichelspass;
       //else if (michelgroup == 1) evt.m_nmichels = evt.m_sidebandpass;  
+      int noverlay = 0.0;
       int nmichels = evt.m_nmichels.size();
-     
+      std::vector<Michel> closestMichel;
+      if (nmichels == 0) return false;     
       evt.m_bestdist = 9999.; // setting some default value for best distance
       std::vector<double> allmichel3Ddist;
       for (int i = 0; i < nmichels; ++i)
@@ -48,9 +50,10 @@ class GetClosestMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
       {
         double dist = evt.m_nmichels[i].Best3Ddist; 
 	if (evt.m_nmichels[i].OrderOfMichel == 1) {
-           evt.m_bestdist = dist;
+           //closestMichel.push_back(evt.m_nmichels[i]);
+	   evt.m_bestdist = dist;
            evt.m_idx = i;
-
+           if (evt.m_nmichels[i].overlay_fraction > 0.5) evt.ClosestMichelsIsOverlay = 1;      
            evt.m_best_XZ = evt.m_nmichels[i].best_XZ;
            evt.m_best_UZ = evt.m_nmichels[i].best_UZ;
            evt.m_best_VZ = evt.m_nmichels[i].best_VZ;
@@ -69,6 +72,7 @@ class GetClosestMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
            evt.b_truex = evt.m_nmichels[i].true_initialx;
            evt.b_truey = evt.m_nmichels[i].true_initialy;
            evt.b_truez = evt.m_nmichels[i].true_initialz;
+           closestMichel.push_back(evt.m_nmichels[i]);
          }	
 	 else {
     	   evt.m_idx = -1;
@@ -79,7 +83,9 @@ class GetClosestMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
        evt.lowTpi = lowtpiinevent;
        evt.pT_reco = univ.GetMuonPT();
        evt.q3_reco = univ.Getq3();
-       evt.eavail_reco = univ.GetEavail();  
+       evt.eavail_reco = univ.NewEavail();  
+       evt.m_nmichels.clear();
+       evt.m_nmichels = closestMichel;
        return true;       
        //return !evt.m_nmichels.empty();
     };

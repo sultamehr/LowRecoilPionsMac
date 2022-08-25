@@ -348,6 +348,30 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
       return npion;
 
  }
+ 
+ virtual int GetTrueNKaonsinEvent() const {
+     int npart = 0;
+     int pdgsize = GetInt("mc_nFSPart");
+     for (int i = 0; i< pdgsize; i++)
+      {
+          int pdg = GetVecElem("mc_FSPartPDG", i);
+          if (pdg == 311 or pdg == 321) npart++;
+      }
+      return npart;
+ }
+
+ virtual int GetTrueNPi0inEvent() const {
+     int npart = 0;
+     int pdgsize = GetInt("mc_nFSPart");
+     for (int i = 0; i< pdgsize; i++)
+      {
+          int pdg = GetVecElem("mc_FSPartPDG", i);
+          if (pdg == 111) npart++;
+      } 
+      return npart;
+ }
+
+
 
  virtual double GetTrueLowestTpiEvent() const {
     double tpi = 999999.;
@@ -452,7 +476,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
  }
 
 
- double GetClusterEnergyTracker() const
+ virtual double GetClusterEnergyTracker() const
  {
     int nclusters = GetInt("cluster_view_sz");
     double totenergy = 0.0;
@@ -473,7 +497,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
     return totenergy;
  }
 
- double GetClusterEnergyECAL() const
+ virtual double GetClusterEnergyECAL() const
  {
     double totenergy = 0.0;
     int nclusters = GetInt("cluster_view_sz"); 
@@ -494,7 +518,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
     return totenergy;
  }
  
- double GetTrackerMuFuzz() const
+ virtual double GetTrackerMuFuzz() const
  {
     double mufuzz = 0;
     int nfuzz = GetInt("muon_fuzz_per_plane_r80_planeIDs_sz");
@@ -507,7 +531,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
     return mufuzz;
  } 
 
- double GetECALMuFuzz() const
+ virtual double GetECALMuFuzz() const
  {
     double mufuzz = 0;
     int nfuzz = GetInt("muon_fuzz_per_plane_r80_planeIDs_sz");
@@ -544,6 +568,8 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
 
  } 
  
+
+
  virtual double GetTrueEAvail() const
  {
      double Eavail = 0.0;

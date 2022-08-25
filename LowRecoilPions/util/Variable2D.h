@@ -4,7 +4,8 @@
 #include "util/SafeROOTName.h"
 #include "PlotUtils/Variable2DBase.h"
 #include "util/Categorized.h"
-#include "util/TruthInteractionStudies.h"
+#include "util/PionFSCategory.h"
+//#include "util/TruthInteractionStudies.h"
 class Variable2D: public PlotUtils::Variable2DBase<CVUniverse>
 {
   private:

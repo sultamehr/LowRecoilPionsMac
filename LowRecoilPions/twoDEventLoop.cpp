@@ -58,10 +58,11 @@ enum ErrorCodes
 #include "util/GetFluxIntegral.h"
 #include "util/GetPlaylist.h"
 #include "cuts/SignalDefinition.h"
-#include "util/TruthInteractionStudies.h"
+//#include "util/TruthInteractionStudies.h"
+#include "util/PionFSCategory.h"
 #include "cuts/q3RecoCut.h"
 #include "studies/Study.h"
-#include "studies/PerMichelVarByGENIELabel.h"
+//#include "studies/PerMichelVarByGENIELabel.h"
 #include "studies/PerMichelEventVarByGENIELabel.h"  
 #include "studies/PerMichel2DVar.h"
 #include "studies/PerMichel2DVarbin.h"
@@ -159,7 +160,7 @@ void LoopAndFillEventSelection(
 	if (!cutResults.all()) continue;
         if (cutResults.all()){
 	    //setDistanceMichelSelection(*universe, myevent, 150.);
-            setClosestMichel(*universe, myevent,0);
+            //setClosestMichel(*universe, myevent,0);
   	    //if (!myevent.m_nmichelspass.empty() and myevent.selection == 1){
 		for(auto& var: vars) {
 			//std::cout << "Filling Var for this universe " << i << std::endl;  
@@ -315,7 +316,7 @@ void LoopAndFillData( PlotUtils::ChainWrapper* data,
       if (!cutResults.all()) continue;
       if (cutResults.all()){
       	//setDistanceMichelSelection(*universe, myevent, 150.);
-        setClosestMichel(*universe, myevent,0);
+        //setClosestMichel(*universe, myevent,0);
         //if (!myevent.m_nmichelspass.empty() and myevent.selection ==1){
 
       		//std::cout << "Filling Data STudies" << std::endl;
@@ -599,9 +600,9 @@ int main(const int argc, const char** argv)
   std::vector<double> rangebins = {0, 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 44., 50., 56., 62., 70., 80.,90., 100., 110.,  120., 140., 160., 180., 200., 220., 240., 260., 280., 300., 325., 350., 375., 400., 450., 500., 550., 600., 650., 700., 800., 900., 1000., 1200., 1400., 1800., 2400.};             
   //std::vector<double> tpibins = {0., 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 46., 52., 60.,  70., 80., 90., 100., 120., 140., 160., 180., 200., 220., 240., 260.,280., 300., 320., 340., 360., 380., 400., 500., 1000.};
   //std::vector<double> rangebins = {0., 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 46., 52., 60., 70., 80., 90., 100., 120., 140., 160., 180., 200., 220., 260., 280., 300., 320., 340., 360., 380., 400., 425., 450., 475., 500., 600., 700., 800., 1000., 1200., 1400., 1600., 2000., 2400.}; 
-  std::vector<double> recoilbins = {0.0, 150., 200., 300., 400., 500., 600., 800., 1000., 1200., 1400., 1600.};
-  const double robsRecoilBinWidth = 50; //MeV
-  for(int whichBin = 0; whichBin < 30 + 1; ++whichBin) robsRecoilBins.push_back(robsRecoilBinWidth * whichBin);
+  std::vector<double> recoilbins = {0.0, 200., 300., 400., 500., 600., 800., 1000., 1200., 1400., 1600.};
+  const double robsRecoilBinWidth = 75; //MeV
+  for(int whichBin = 0; whichBin < 20 + 1; ++whichBin) robsRecoilBins.push_back(robsRecoilBinWidth * whichBin);
 
   std::vector<Variable*> vars = {
     new Variable("pTmu", "p_{T, #mu} [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue), //0
@@ -651,10 +652,10 @@ int main(const int argc, const char** argv)
   for(auto& var: vars) var->InitializeDATAHists(data_band);
   for(auto& var: vars2D) var->InitializeMCHists(error_bands, truth_bands);
   for(auto& var: vars2D) var->InitializeDATAHists(data_band);
-  for(auto& var: sidevars) var->InitializeDATAHists(data_band);
-  for(auto& var: sidevars) var->InitializeMCHists(error_bands, truth_bands);
-  for(auto& var: sidevars2D) var->InitializeMCHists(error_bands, truth_bands);
-  for(auto& var: sidevars2D) var->InitializeDATAHists(data_band);  
+  //for(auto& var: sidevars) var->InitializeDATAHists(data_band);
+  //for(auto& var: sidevars) var->InitializeMCHists(error_bands, truth_bands);
+  //for(auto& var: sidevars2D) var->InitializeMCHists(error_bands, truth_bands);
+  //for(auto& var: sidevars2D) var->InitializeDATAHists(data_band);  
 
   // Loop entries and fill
   try
@@ -676,18 +677,18 @@ int main(const int argc, const char** argv)
     std::cout  << "Opening the MCOUTPUT for EVENT hists" << std::endl;
     //Write MC results
     TFile* mcOutDir = TFile::Open(MC_OUT_FILE_NAME, "RECREATE");
-    TFile* mcSideDir = TFile::Open(MC_SIDE_FILE_NAME, "RECREATE");
+    //TFile* mcSideDir = TFile::Open(MC_SIDE_FILE_NAME, "RECREATE");
     if(!mcOutDir)
     {
       std::cerr << "Failed to open a file named " << MC_OUT_FILE_NAME << " in the current directory for writing histograms.\n";
       return badOutputFile;
     }
     
-    if(!mcSideDir)
-    {
-      std::cerr << "Failed to open a file named " << MC_SIDE_FILE_NAME << " in the current directory for writing histograms.\n";
-      return badOutputFile;
-    }
+   // if(!mcSideDir)
+   // {
+   //   std::cerr << "Failed to open a file named " << MC_SIDE_FILE_NAME << " in the current directory for writing histograms.\n";
+   //   return badOutputFile;
+  //  }
     
     std::cout << "Saving Histos to MC Files" << std::endl;
     for(auto& var: vars) var->WriteMC(*mcOutDir);
@@ -696,10 +697,10 @@ int main(const int argc, const char** argv)
     std::cout << "Saving Histos to Data Files" << std::endl;
    
     //
-    for(auto& var: sidevars) var->WriteMC(*mcSideDir);
-    std::cout << "WRiting 2D VARS to event level file " << std::endl;
-    for(auto& var: sidevars2D) var->Write(*mcSideDir);
-    std::cout << "Saving Histos to Data Files" << std::endl;
+    //for(auto& var: sidevars) var->WriteMC(*mcSideDir);
+    //std::cout << "WRiting 2D VARS to event level file " << std::endl;
+    //for(auto& var: sidevars2D) var->Write(*mcSideDir);
+    //std::cout << "Saving Histos to Data Files" << std::endl;
 
 
 
@@ -713,8 +714,8 @@ int main(const int argc, const char** argv)
     mcOutDir->cd();
     mcPOT->Write();
     
-    mcSideDir->cd();
-    mcPOT->Write();
+    //mcSideDir->cd();
+    //mcPOT->Write();
     
 
     PlotUtils::TargetUtils targetInfo;
@@ -731,30 +732,32 @@ int main(const int argc, const char** argv)
     std::cout << "Writing Data Results" << std::endl;
     //Write data results
     TFile* dataOutDir = TFile::Open(DATA_OUT_FILE_NAME, "RECREATE");
-    TFile* dataSideDir = TFile::Open(DATA_SIDE_FILE_NAME, "RECREATE");
+    //TFile* dataSideDir = TFile::Open(DATA_SIDE_FILE_NAME, "RECREATE");
     if(!dataOutDir)
     {
       std::cerr << "Failed to open a file named " << DATA_OUT_FILE_NAME << " in the current directory for writing histograms.\n";
       return badOutputFile;
     }
-    if(!dataSideDir)
-    {
-      std::cerr << "Failed to open a file named " << DATA_SIDE_FILE_NAME << " in the current directory for writing histograms.\n";
-      return badOutputFile;
-    }
+    //if(!dataSideDir)
+    //{
+    //  std::cerr << "Failed to open a file named " << DATA_SIDE_FILE_NAME << " in the current directory for writing histograms.\n";
+    //  return badOutputFile;
+   // }
 
     std::cout << "Writing Data Vars" << std::endl;
     for(auto& var: vars) var->WriteData(*dataOutDir);
     for(auto& var: vars2D) var->Write(*dataOutDir);
-    for(auto& var: sidevars) var->WriteData(*dataSideDir);
-    for(auto& var: sidevars2D) var->Write(*dataSideDir); 
-   //Protons On Target
+  
+    //for(auto& var: sidevars) var->WriteData(*dataSideDir);
+    //for(auto& var: sidevars2D) var->Write(*dataSideDir); 
+    //Protons On Target
     auto dataPOT = new TParameter<double>("POTUsed", options.m_data_pot);
     dataPOT->Write();
     dataOutDir->cd();
     dataPOT->Write();
-    dataSideDir->cd();
-    dataPOT->Write();
+    dataOutDir->cd();
+    //dataSideDir->cd();
+    //dataPOT->Write();
     std::cout << "Success" << std::endl;
   }
   catch(const ROOT::exception& e)

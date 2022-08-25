@@ -19,7 +19,7 @@ class hasMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
     {
       evt.m_allmichels.clear();
       int nmichels = univ.GetNMichels();
-      if (nmichels == 0) continue;
+      if (nmichels == 0) return false;
       evt.m_bestdist = 9999.; // setting some default value for best distance
       for (int i = 0; i < nmichels; ++i)
       {
@@ -33,6 +33,8 @@ class hasMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
         //if (current_michel.true_parentpdg == 211) evt.m_ntruepiparents.push_back(current_michel);  
         //evt.m_nmichels.push_back(current_michel);
         evt.m_allmichels.push_back(current_michel);       
+	
+        
        }
         //Filling Event Level Info needed for 2D selection 
         double lowtpiinevent = univ.GetTrueTpi();

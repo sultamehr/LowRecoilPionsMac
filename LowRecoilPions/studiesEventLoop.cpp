@@ -58,10 +58,11 @@ enum ErrorCodes
 #include "util/GetFluxIntegral.h"
 #include "util/GetPlaylist.h"
 #include "cuts/SignalDefinition.h"
-#include "util/TruthInteractionStudies.h"
+//#include "util/TruthInteractionStudies.h"
+#include "util/PionFSCategory.h"
 #include "cuts/q3RecoCut.h"
 #include "studies/Study.h"
-#include "studies/PerMichelVarByGENIELabel.h"
+//#include "studies/PerMichelVarByGENIELabel.h"
 #include "studies/PerMichelEventVarByGENIELabel.h"  
 #include "studies/PerMichel2DVar.h"
 #include "studies/PerMichel2DVarbin.h"
@@ -158,22 +159,22 @@ void LoopAndFillEventSelection(
         //if (universe->ShortName() != "cv") continue;
 	if (!cutResults.all()) continue;
         if (cutResults.all()){
-	    setDistanceMichelSelection(*universe, myevent, 150.);
+	    //setDistanceMichelSelection(*universe, myevent, 150.);
             setClosestMichel(*universe, myevent,0);
-  	    if (!myevent.m_nmichelspass.empty()){
+  	    //if (!myevent.m_nmichelspass.empty()){
 
-        	for(auto& study: studies) study->SelectedSignal(*universe, myevent, weight2);
+            for(auto& study: studies) study->SelectedSignal(*universe, myevent, weight2);
 
 
-            } // End of if SelectedMichels Not Empty
-            else{
+            //} // End of if SelectedMichels Not Empty
+            /*else{
     	
                 setDistanceMichelSidebands(*universe, myevent, 150., 500.);
                 setClosestMichel(*universe, myevent,1);
 	        if (!myevent.m_sidebandpass.empty()){
                        for(auto& study: sideband_studies) study->SelectedSignal(*universe, myevent, weight2);
 	        } // else of if sidebandpass 
-            } // end of else if (!cutResults[0] && evt.sideband == 1) // To fill Sideband Variables
+            } */// end of else if (!cutResults[0] && evt.sideband == 1) // To fill Sideband Variables
         } // If event passes PreCuts
       } // End band's universe loop
     } // End Band loop
@@ -208,21 +209,21 @@ void LoopAndFillData( PlotUtils::ChainWrapper* data,
       const auto cutResults = michelcuts.isDataSelected(*universe, myevent);
       if (!cutResults.all()) continue;
       if (cutResults.all()){
-      	setDistanceMichelSelection(*universe, myevent, 150.);
+      	//setDistanceMichelSelection(*universe, myevent, 150.);
         setClosestMichel(*universe, myevent,0);
-        if (!myevent.m_nmichelspass.empty() and myevent.selection ==1){
+        //if (!myevent.m_nmichelspass.empty() and myevent.selection ==1){
       		//std::cout << "Filling Data STudies" << std::endl;
-      		for(auto& study: studies) study->Selected(*universe, myevent, 1); 
-     	}	 // End of if (michelcuts.isDataSelected(*universe, myevent).all()) -> filling Selection
-        else{
+      	 for(auto& study: studies) study->Selected(*universe, myevent, 1); 
+       }	 // End of if (michelcuts.isDataSelected(*universe, myevent).all()) -> filling Selection
+        /*else{
           setDistanceMichelSidebands(*universe, myevent, 150., 500.);
           setClosestMichel(*universe, myevent,1);
           if (!myevent.m_sidebandpass.empty() and myevent.sideband == 1){
         	for(auto& study: data_sidebands) study->Selected(*universe, myevent, 1); 
 
      	  } // End of else for Filling Sideband Variables
-        } // End of  else if no michelspass
-      }// End of PreCuts Pass
+        } */// End of  else if no michelspass
+     // }// End of PreCuts Pass
     //} // End of Data Band 
    } // End of Entries
   std::cout << "Finished data loop.\n";
@@ -416,10 +417,10 @@ int main(const int argc, const char** argv)
   //nosidebands.emplace_back(new GetClosestMichel<CVUniverse, MichelEvent>(0));
 
 
-  TFile* mc_MichelStudies = TFile::Open("July282022_EavailComp_noreweight_pTbin6_MC.root", "RECREATE");
-  TFile* data_MichelStudies = TFile::Open("July282022_EavailComp_noreweight_pTbin6_data.root", "RECREATE");
-  TFile* mc_SidebandStudies = TFile::Open("July282022_Sideband_noreweight_pTbin6_MC.root", "RECREATE");
-  TFile* data_SidebandStudies = TFile::Open("July282022_Sideband_noreweight_pTbin6_data.root", "RECREATE");
+  TFile* mc_MichelStudies = TFile::Open("Aug172022_EavailComp_noreweight_pTbin6_MC.root", "RECREATE");
+  TFile* data_MichelStudies = TFile::Open("Aug172022_EavailComp_noreweight_pTbin6_data.root", "RECREATE");
+  TFile* mc_SidebandStudies = TFile::Open("Aug122022_Sideband_noreweight_pTbin6_MC.root", "RECREATE");
+  TFile* data_SidebandStudies = TFile::Open("Aug122022_Sideband_noreweight_pTbin6_data.root", "RECREATE");
 
   signalDefinition.emplace_back(new truth::IsNeutrino<CVUniverse>());
   signalDefinition.emplace_back(new truth::IsCC<CVUniverse>());
@@ -473,8 +474,10 @@ int main(const int argc, const char** argv)
   
    
   int nq3mbins = mehreenQ3Bins.size() -1; 
-  std::vector<double> tpibins = {0, 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 46., 52.,60., 70., 80., 100., 125.,150., 175., 200., 225., 250., 275., 300., 325., 350., 400., 500., 1000.};   
-  std::vector<double> rangebins = {0, 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 44., 50., 56., 62., 70., 80.,90., 100., 110.,  120., 140., 160., 180., 200., 220., 240., 260., 280., 300., 325., 350., 375., 400., 450., 500., 550., 600., 650., 700., 800., 900., 1000., 1200., 1400., 1800., 2400.};             
+  std::vector<double> tpibins = {0, 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 46., 52.,60., 70., 80., 100., 125.,150., 175., 200., 225., 250., 275., 300., 350., 400., 500., 1000.};   
+   std::vector<double> rangebins = {0., 8., 16., 24., 32., 40., 50., 65., 80.,95., 110., 140., 170., 200., 230., 260., 290., 310., 360., 400., 450., 500., 550., 600., 650., 700., 800., 900., 1000., 1200., 1400., 1800., 2400.};
+
+  //std::vector<double> rangebins = {0, 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 44., 50., 56., 62., 70., 80.,90., 100., 110.,  120., 140., 160., 180., 200., 220., 240., 260., 280., 300., 325., 350., 375., 400., 450., 500., 550., 600., 650., 700., 800., 900., 1000., 1200., 1400., 1800., 2400.};             
   //std::vector<double> tpibins = {0., 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 46., 52., 60.,  70., 80., 90., 100., 120., 140., 160., 180., 200., 220., 240., 260.,280., 300., 320., 340., 360., 380., 400., 500., 1000.};
   //std::vector<double> rangebins = {0., 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 46., 52., 60., 70., 80., 90., 100., 120., 140., 160., 180., 200., 220., 260., 280., 300., 320., 340., 360., 380., 400., 425., 450., 475., 500., 600., 700., 800., 1000., 1200., 1400., 1600., 2000., 2400.}; 
   std::vector<double> recoilbins = {0.0, 150., 200., 300., 400., 500., 600., 800., 1000., 1200., 1400., 1600.};
@@ -884,42 +887,42 @@ std::function<double(const CVUniverse&, const MichelEvent&, const int)> true_ang
    int nbinsrange = rangebins.size()-1;
    int nbinstpi = tpibins.size()-1;
 
-   studies.push_back(new PerMichelVarByGENIELabel(true_angle, "true_angle", "cos(#theta)", 21, -1.0, 1.0, error_bands));
-   studies.push_back(new PerMichelVarByGENIELabel(true_angle_range1, "true_angle_range1", "cos(#theta)", 21, -1.0, 1., error_bands));
-   studies.push_back(new PerMichelVarByGENIELabel(true_angle_range2, "true_angle_range2", "cos(#theta)", 21, -1.0, 1., error_bands));
-   studies.push_back(new PerMichelVarByGENIELabel(true_angle_range3, "true_angle_range3", "cos(#theta)", 21, -1.0, 1., error_bands));
-   studies.push_back(new PerMichelVarByGENIELabel(true_angle_range4, "true_angle_range4", "cos(#theta)", 21, -1.0, 1., error_bands));
+   //studies.push_back(new PerMichelVarByGENIELabel(true_angle, "true_angle", "cos(#theta)", 21, -1.0, 1.0, error_bands));
+   //studies.push_back(new PerMichelVarByGENIELabel(true_angle_range1, "true_angle_range1", "cos(#theta)", 21, -1.0, 1., error_bands));
+   //studies.push_back(new PerMichelVarByGENIELabel(true_angle_range2, "true_angle_range2", "cos(#theta)", 21, -1.0, 1., error_bands));
+   //studies.push_back(new PerMichelVarByGENIELabel(true_angle_range3, "true_angle_range3", "cos(#theta)", 21, -1.0, 1., error_bands));
+   //studies.push_back(new PerMichelVarByGENIELabel(true_angle_range4, "true_angle_range4", "cos(#theta)", 21, -1.0, 1., error_bands));
    //studies.push_back(new PerMichelVarByGENIELabel(pion_angle, "pion_angle", "cos(#theta)", 21, -1.0, 1., error_bands));
    //studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range1, "pion_angle_range1", "cos(#theta)", 21, -1.0, 1., error_bands));
    //studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range2, "pion_angle_range2", "cos(#theta)", 21, -1.0, 1., error_bands));
    //studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range3, "pion_angle_range3", "cos(#theta)", 21, -1.0, 1., error_bands));
    //studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range4, "pion_angle_range4", "cos(#theta)", 21, -1.0, 1., error_bands));
 
-   studies.push_back(new PerMichelVarVec(michel_XZ, "best_XZ", "mm", nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(michel_UZ, "best_UZ", "mm", nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(michel_VZ, "best_VZ", "mm", nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(michel_XZ_upvtx, "upvtx_XZ", "mm", nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(michel_XZ_upclus, "upclus_XZ", "mm", nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(michel_XZ_downclus, "downclus_XZ", "mm", nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(michel_XZ_downvtx, "downvtx_XZ", "mm", nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(michel_UZ_upvtx, "upvtx_UZ", "mm", nbinsrange,rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(michel_UZ_upclus, "upclus_UZ", "mm", nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(michel_UZ_downclus, "downclus_UZ", "mm", nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(michel_UZ_downvtx, "downvtx_UZ", "mm", nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(michel_VZ_upvtx, "upvtx_VZ", "mm", nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(michel_VZ_upclus, "upclus_VZ", "mm", nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(michel_VZ_downclus, "downclus_VZ", "mm", nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(michel_VZ_downvtx, "downvtx_VZ", "mm", nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(michel_XZ, "best_XZ", "mm", nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(michel_UZ, "best_UZ", "mm", nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(michel_VZ, "best_VZ", "mm", nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(michel_XZ_upvtx, "upvtx_XZ", "mm", nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(michel_XZ_upclus, "upclus_XZ", "mm", nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(michel_XZ_downclus, "downclus_XZ", "mm", nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(michel_XZ_downvtx, "downvtx_XZ", "mm", nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(michel_UZ_upvtx, "upvtx_UZ", "mm", nbinsrange,rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(michel_UZ_upclus, "upclus_UZ", "mm", nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(michel_UZ_downclus, "downclus_UZ", "mm", nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(michel_UZ_downvtx, "downvtx_UZ", "mm", nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(michel_VZ_upvtx, "upvtx_VZ", "mm", nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(michel_VZ_upclus, "upclus_VZ", "mm", nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(michel_VZ_downclus, "downclus_VZ", "mm", nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(michel_VZ_downvtx, "downvtx_VZ", "mm", nbinsrange, rangebins, error_bands));
 
-   studies.push_back(new PerMichelVarByGENIELabel(delta_t, "michelmuon_deltat", "#mus", 30, 0.0, 9.0, error_bands));
-   studies.push_back(new PerMichelVarVec(overlay_vtx_range, "overlay_vtx_range",  "mm", nbinsrange, rangebins, error_bands));    
-   studies.push_back(new PerMichelVarVec(overlay_clus_range, "overlay_clus_range",  "mm", nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(truemichel_goodvtx_range, "truemichel_goodvtx_range",  "mm", nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(truemichel_goodclus_range, "truemichel_goodclus_range",  "mm", nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(truemichel_badvtx_range, "truemichel_badvtx_range",  "mm",  nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(truemichel_badclus_range, "truemichel_badclus_range",  "mm", nbinsrange, rangebins, error_bands));
-   studies.push_back(new PerMichelVarVec(permichel_tpi, "Per_Michel_PrimaryParentKE", "MeV", nbinstpi, tpibins, error_bands));
-   studies.push_back(new PerMichelVarVec(pertruepimichel_range, "permichel_pirange_truepi", "mm", nbinstpi, tpibins, error_bands)); 
+   //studies.push_back(new PerMichelVarByGENIELabel(delta_t, "michelmuon_deltat", "#mus", 30, 0.0, 9.0, error_bands));
+   //studies.push_back(new PerMichelVarVec(overlay_vtx_range, "overlay_vtx_range",  "mm", nbinsrange, rangebins, error_bands));    
+   //studies.push_back(new PerMichelVarVec(overlay_clus_range, "overlay_clus_range",  "mm", nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(truemichel_goodvtx_range, "truemichel_goodvtx_range",  "mm", nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(truemichel_goodclus_range, "truemichel_goodclus_range",  "mm", nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(truemichel_badvtx_range, "truemichel_badvtx_range",  "mm",  nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(truemichel_badclus_range, "truemichel_badclus_range",  "mm", nbinsrange, rangebins, error_bands));
+   //studies.push_back(new PerMichelVarVec(permichel_tpi, "Per_Michel_PrimaryParentKE", "MeV", nbinstpi, tpibins, error_bands));
+   //studies.push_back(new PerMichelVarVec(pertruepimichel_range, "permichel_pirange_truepi", "mm", nbinstpi, tpibins, error_bands)); 
 
    //VarConfig deltat_config{"deltat", "#mus", 30, 0., 9.};
    VarConfig pirange_config{"pirange", "mm", 100, 0.0, 2000.0};
@@ -931,7 +934,7 @@ std::function<double(const CVUniverse&, const MichelEvent&, const int)> true_ang
    eVarConfig2D pTconfig{"pT_reco", "GeV", nq3mbins, mehreenQ3Bins};
    eVarConfig2D erangeconfig{"ePirange", "mm", nbinsrange, rangebins};
    eVarConfig2D etpiconfig{"ePion_KE", "MeV", nbinstpi, tpibins};
-   std::vector<double> anglebins = {-1.2,-1, -.80, -.70, -.60, -.50, -.40, -.30, -.20, -.10, 0., .10, .20, .30, .40,.50,.60,.70,.80,.90,1.,1.2};
+   std::vector<double> anglebins = {-1.2,-1, -.80, -.70, -.60, -.50, -.40, -.30, -.20, -.10, .10, .20, .30, .40,.50,.60,.70,.80,.90,1.,1.2};
    int nbinsangle = anglebins.size() -1;
    studies.push_back(new PerMichelVarVecFSPart(pion_angle, "pion_angle", "cos(#theta)", nbinsangle,anglebins, error_bands));
    studies.push_back(new PerMichelVarVecFSPart(pion_angle_range1, "pion_angle_range1", "cos(#theta)", nbinsangle,anglebins, error_bands));
@@ -1068,15 +1071,15 @@ std::function<double(const CVUniverse&, const MichelEvent&)> lowesttpi = [](cons
 			  	   return lowtpi;
 
 };
-   studies.push_back(new PerEventVarBin(lowesttpi, "LowestKE_pion", "MeV", nbinstpi ,tpibins, error_bands));
+   //studies.push_back(new PerEventVarBin(lowesttpi, "LowestKE_pion", "MeV", nbinstpi ,tpibins, error_bands));
 
-   studies.push_back(new PerMichelEventVarByGENIELabel(best_pionrange, "best_pionrange", "mm", 100, 0.0, 2000.0, error_bands));
-   studies.push_back(new PerMichelEventVarByGENIELabel(best_pionrange_overlay_clus, "best_pionrange_overlay_clus",  "mm", 100, 0.0, 2000.0, error_bands));
-   studies.push_back(new PerMichelEventVarByGENIELabel(best_pionrange_overlay_vtx , "best_pionrange_overlay_vtx ",  "mm", 100, 0.0, 2000.0, error_bands));
-   studies.push_back(new PerMichelEventVarByGENIELabel(best_pionrange_truegood_vtx, "best_pionrange_truegood_vtx",  "mm", 100, 0.0, 2000.0, error_bands));
-   studies.push_back(new PerMichelEventVarByGENIELabel(best_pionrange_truebad_vtx, "best_pionrange_truebad_vtx",  "mm", 100, 0.0, 2000.0, error_bands));
-   studies.push_back(new PerMichelEventVarByGENIELabel(best_pionrange_truegood_clus, "best_pionrange_truegood_clus",  "mm", 100, 0.0, 2000.0, error_bands));
-   studies.push_back(new PerMichelEventVarByGENIELabel(best_pionrange_truebad_clus, "best_pionrange_truebad_clus",  "mm", 100, 0.0, 2000.0, error_bands));
+   //studies.push_back(new PerMichelEventVarByGENIELabel(best_pionrange, "best_pionrange", "mm", 100, 0.0, 2000.0, error_bands));
+   //studies.push_back(new PerMichelEventVarByGENIELabel(best_pionrange_overlay_clus, "best_pionrange_overlay_clus",  "mm", 100, 0.0, 2000.0, error_bands));
+   //studies.push_back(new PerMichelEventVarByGENIELabel(best_pionrange_overlay_vtx , "best_pionrange_overlay_vtx ",  "mm", 100, 0.0, 2000.0, error_bands));
+   //studies.push_back(new PerMichelEventVarByGENIELabel(best_pionrange_truegood_vtx, "best_pionrange_truegood_vtx",  "mm", 100, 0.0, 2000.0, error_bands));
+   //studies.push_back(new PerMichelEventVarByGENIELabel(best_pionrange_truebad_vtx, "best_pionrange_truebad_vtx",  "mm", 100, 0.0, 2000.0, error_bands));
+   //studies.push_back(new PerMichelEventVarByGENIELabel(best_pionrange_truegood_clus, "best_pionrange_truegood_clus",  "mm", 100, 0.0, 2000.0, error_bands));
+   //studies.push_back(new PerMichelEventVarByGENIELabel(best_pionrange_truebad_clus, "best_pionrange_truebad_clus",  "mm", 100, 0.0, 2000.0, error_bands));
    
    studies.push_back(new PerMichelEvent2DVarbin(best_tpi, best_pionrange, etpiconfig, erangeconfig, error_bands));
    studies.push_back(new PerMichelEvent2DVarbin(best_tpi, getq3, etpiconfig, q3config, error_bands));
@@ -1084,11 +1087,11 @@ std::function<double(const CVUniverse&, const MichelEvent&)> lowesttpi = [](cons
    studies.push_back(new PerMichelEvent2DVarbin(best_tpi, getpT, etpiconfig, pTconfig, error_bands));
    studies.push_back(new PerMichelEvent2DVarbin(best_pionrange, getpT, erangeconfig, pTconfig, error_bands));
 
-   sideband_studies.push_back(new PerMichelEvent2DVarbin(best_tpi, best_pionrange, etpiconfig, erangeconfig, error_bands));
-   sideband_studies.push_back(new PerMichelEvent2DVarbin(best_tpi, getq3, etpiconfig, q3config, error_bands));
-   sideband_studies.push_back(new PerMichelEvent2DVarbin(best_pionrange, getq3, erangeconfig, q3config, error_bands));
-   sideband_studies.push_back(new PerMichelEvent2DVarbin(best_tpi, getpT, etpiconfig, pTconfig, error_bands));
-   sideband_studies.push_back(new PerMichelEvent2DVarbin(best_pionrange, getpT, erangeconfig, pTconfig, error_bands)); 
+   //sideband_studies.push_back(new PerMichelEvent2DVarbin(best_tpi, best_pionrange, etpiconfig, erangeconfig, error_bands));
+   //sideband_studies.push_back(new PerMichelEvent2DVarbin(best_tpi, getq3, etpiconfig, q3config, error_bands));
+   //sideband_studies.push_back(new PerMichelEvent2DVarbin(best_pionrange, getq3, erangeconfig, q3config, error_bands));
+   //sideband_studies.push_back(new PerMichelEvent2DVarbin(best_tpi, getpT, etpiconfig, pTconfig, error_bands));
+   //sideband_studies.push_back(new PerMichelEvent2DVarbin(best_pionrange, getpT, erangeconfig, pTconfig, error_bands)); 
 
 
 
@@ -1104,28 +1107,36 @@ std::function<double(const CVUniverse&, const MichelEvent&)> lowesttpi = [](cons
   
   std::vector<Study*> data_studies;
   std::vector<Study*> data_sidebands;
-  data_studies.push_back(new PerMichelEventVarByGENIELabel(best_pionrange, "best_pionrange", "mm", 100, 0.0, 2000.0, data_error_bands));
-  data_studies.push_back(new PerMichelVarByGENIELabel(delta_t, "michelmuon_deltat", "#mus", 30, 0.0, 9.0, data_error_bands));
-  data_studies.push_back(new PerMichelVarByGENIELabel(pion_angle, "pion_angle", "cos(#theta)", 21, -1.0, 1., data_error_bands));
-  data_studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range1, "pion_angle_range1", "cos(#theta)", 21, -1.0, 1., data_error_bands));
-  data_studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range2, "pion_angle_range2", "cos(#theta)", 21, -1.0, 1., data_error_bands));
-  data_studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range3, "pion_angle_range3", "cos(#theta)", 21, -1.0, 1., data_error_bands));
-  data_studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range4, "pion_angle_range4", "cos(#theta)", 21, -1.0, 1., data_error_bands)); 
-  data_studies.push_back(new PerMichelVarVec(permichel_range,"permichel_pirange", "mm",nbinsrange, rangebins, data_error_bands));
+  data_studies.push_back(new PerMichelVarVecFSPart(pion_angle, "pion_angle", "cos(#theta)", nbinsangle,anglebins, data_error_bands));
+  data_studies.push_back(new PerMichelVarVecFSPart(pion_angle_range1, "pion_angle_range1", "cos(#theta)", nbinsangle,anglebins, data_error_bands));
+  data_studies.push_back(new PerMichelVarVecFSPart(pion_angle_range2, "pion_angle_range2", "cos(#theta)", nbinsangle,anglebins, data_error_bands));
+  data_studies.push_back(new PerMichelVarVecFSPart(pion_angle_range3, "pion_angle_range3", "cos(#theta)", nbinsangle,anglebins, data_error_bands));
+  data_studies.push_back(new PerMichelVarVecFSPart(pion_angle_range4, "pion_angle_range4", "cos(#theta)",nbinsangle,anglebins , data_error_bands)); 
+  data_studies.push_back(new PerMichelVarVecFSPart(permichel_range, "permichel_pirange", "mm", nbinsrange, rangebins, data_error_bands));
+ 
+
+  //data_studies.push_back(new PerMichelEventVarByGENIELabel(best_pionrange, "best_pionrange", "mm", 100, 0.0, 2000.0, data_error_bands));
+  //data_studies.push_back(new PerMichelVarByGENIELabel(delta_t, "michelmuon_deltat", "#mus", 30, 0.0, 9.0, data_error_bands));
+  //data_studies.push_back(new PerMichelVarByGENIELabel(pion_angle, "pion_angle", "cos(#theta)", 21, -1.0, 1., data_error_bands));
+  //data_studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range1, "pion_angle_range1", "cos(#theta)", 21, -1.0, 1., data_error_bands));
+  //data_studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range2, "pion_angle_range2", "cos(#theta)", 21, -1.0, 1., data_error_bands));
+  //data_studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range3, "pion_angle_range3", "cos(#theta)", 21, -1.0, 1., data_error_bands));
+  //data_studies.push_back(new PerMichelVarByGENIELabel(pion_angle_range4, "pion_angle_range4", "cos(#theta)", 21, -1.0, 1., data_error_bands)); 
+  //data_studies.push_back(new PerMichelVarVec(permichel_range,"permichel_pirange", "mm",nbinsrange, rangebins, data_error_bands));
   data_studies.push_back(new PerMichelEvent2DVarbin(best_pionrange, getq3, erangeconfig, q3config, data_error_bands));
   data_studies.push_back(new PerMichelEvent2DVarbin(best_pionrange, getpT, erangeconfig, pTconfig, data_error_bands));
  
 
-  data_sidebands.push_back(new PerMichelEventVarByGENIELabel(best_pionrange, "best_pionrange", "mm", 100, 0.0, 2000.0, data_error_bands));
-  data_sidebands.push_back(new PerMichelVarByGENIELabel(delta_t, "michelmuon_deltat", "#mus", 30, 0.0, 9.0, data_error_bands));
-  data_sidebands.push_back(new PerMichelVarByGENIELabel(pion_angle, "pion_angle", "cos(#theta)", 21, -1.0, 1., data_error_bands));
-  data_sidebands.push_back(new PerMichelVarByGENIELabel(pion_angle_range1, "pion_angle_range1", "cos(#theta)", 21, -1.0, 1., data_error_bands));
-  data_sidebands.push_back(new PerMichelVarByGENIELabel(pion_angle_range2, "pion_angle_range2", "cos(#theta)", 21, -1.0, 1., data_error_bands));
-  data_sidebands.push_back(new PerMichelVarByGENIELabel(pion_angle_range3, "pion_angle_range3", "cos(#theta)", 21, -1.0, 1., data_error_bands));
-  data_sidebands.push_back(new PerMichelVarByGENIELabel(pion_angle_range4, "pion_angle_range4", "cos(#theta)", 21, -1.0, 1., data_error_bands));
-  data_sidebands.push_back(new PerMichelVarVec(permichel_range,"permichel_pirange", "mm",nbinsrange, rangebins, data_error_bands));
-  data_sidebands.push_back(new PerMichelEvent2DVarbin(best_pionrange, getq3, erangeconfig, q3config, data_error_bands));
-  data_sidebands.push_back(new PerMichelEvent2DVarbin(best_pionrange, getpT, erangeconfig, pTconfig, data_error_bands)); 
+  //data_sidebands.push_back(new PerMichelEventVarByGENIELabel(best_pionrange, "best_pionrange", "mm", 100, 0.0, 2000.0, data_error_bands));
+  //data_sidebands.push_back(new PerMichelVarByGENIELabel(delta_t, "michelmuon_deltat", "#mus", 30, 0.0, 9.0, data_error_bands));
+  //data_sidebands.push_back(new PerMichelVarByGENIELabel(pion_angle, "pion_angle", "cos(#theta)", 21, -1.0, 1., data_error_bands));
+  //data_sidebands.push_back(new PerMichelVarByGENIELabel(pion_angle_range1, "pion_angle_range1", "cos(#theta)", 21, -1.0, 1., data_error_bands));
+  //data_sidebands.push_back(new PerMichelVarByGENIELabel(pion_angle_range2, "pion_angle_range2", "cos(#theta)", 21, -1.0, 1., data_error_bands));
+  //data_sidebands.push_back(new PerMichelVarByGENIELabel(pion_angle_range3, "pion_angle_range3", "cos(#theta)", 21, -1.0, 1., data_error_bands));
+  //data_sidebands.push_back(new PerMichelVarByGENIELabel(pion_angle_range4, "pion_angle_range4", "cos(#theta)", 21, -1.0, 1., data_error_bands));
+  //data_sidebands.push_back(new PerMichelVarVec(permichel_range,"permichel_pirange", "mm",nbinsrange, rangebins, data_error_bands));
+  //data_sidebands.push_back(new PerMichelEvent2DVarbin(best_pionrange, getq3, erangeconfig, q3config, data_error_bands));
+  //data_sidebands.push_back(new PerMichelEvent2DVarbin(best_pionrange, getpT, erangeconfig, pTconfig, data_error_bands)); 
    
 
   // Loop entries and fill
@@ -1154,7 +1165,7 @@ std::function<double(const CVUniverse&, const MichelEvent&)> lowesttpi = [](cons
     for(auto& study: studies) study->SaveOrDraw(*mc_MichelStudies);
     std::cout << "WRiting STUDIES to michel level file" << std::endl;
    
-    for(auto& study: sideband_studies) study->SaveOrDraw(*mc_SidebandStudies);
+    //for(auto& study: sideband_studies) study->SaveOrDraw(*mc_SidebandStudies);
 
 
     //CVUniverse::SetTruth(false);
@@ -1163,7 +1174,7 @@ std::function<double(const CVUniverse&, const MichelEvent&)> lowesttpi = [](cons
     //mycuts.resetStats();
 
     for(auto& study: data_studies) study->SaveOrDraw(*data_MichelStudies);
-    for(auto& study: data_sidebands) study->SaveOrDraw(*data_SidebandStudies);
+    //for(auto& study: data_sidebands) study->SaveOrDraw(*data_SidebandStudies);
 
 
     //Protons On Target
@@ -1174,8 +1185,8 @@ std::function<double(const CVUniverse&, const MichelEvent&)> lowesttpi = [](cons
     mc_MichelStudies->cd();
     mcPOT->Write();
     
-    mc_SidebandStudies->cd();
-    mcPOT->Write();
+    //mc_SidebandStudies->cd();
+    //mcPOT->Write();
     
 
     PlotUtils::TargetUtils targetInfo;
@@ -1186,8 +1197,8 @@ std::function<double(const CVUniverse&, const MichelEvent&)> lowesttpi = [](cons
     dataPOT->Write();
     data_MichelStudies->cd();
     dataPOT->Write();
-    data_SidebandStudies->cd();
-    dataPOT->Write();
+    //data_SidebandStudies->cd();
+    //dataPOT->Write();
     std::cout << "Success" << std::endl;
   }
   catch(const ROOT::exception& e)

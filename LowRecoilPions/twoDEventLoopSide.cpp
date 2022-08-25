@@ -1,7 +1,7 @@
-#define MC_OUT_FILE_NAME "runEventLoopMC_Aug012022_1000mm_pTbin6_noreweight.root"
-#define DATA_OUT_FILE_NAME "runEventLoopData_Aug012022_1000mm_pTbin6_noreweight.root"
-#define MC_SIDE_FILE_NAME "runEventLoopMC_Aug012022_Sideband1000_pTbin6_noreweight.root"
-#define DATA_SIDE_FILE_NAME "runEventLoopDATA_Aug012022_Sideband1000_pTbin6_noreweight.root"
+#define MC_OUT_FILE_NAME "runEventLoopMC_Aug122022_1000mm_pTbin6_noreweight.root"
+#define DATA_OUT_FILE_NAME "runEventLoopData_Aug122022_1000mm_pTbin6_noreweight.root"
+#define MC_SIDE_FILE_NAME "runEventLoopMC_Aug122022_Sideband1000_pTbin6_noreweight.root"
+#define DATA_SIDE_FILE_NAME "runEventLoopDATA_Aug122022_Sideband1000_pTbin6_noreweight.root"
 
 
 #define USAGE \
@@ -58,10 +58,11 @@ enum ErrorCodes
 #include "util/GetFluxIntegral.h"
 #include "util/GetPlaylist.h"
 #include "cuts/SignalDefinition.h"
-#include "util/TruthInteractionStudies.h"
+//#include "util/TruthInteractionStudies.h"
+#include "util/PionFSCategory.h"
 #include "cuts/q3RecoCut.h"
 #include "studies/Study.h"
-#include "studies/PerMichelVarByGENIELabel.h"
+//#include "studies/PerMichelVarByGENIELabel.h"
 #include "studies/PerMichelEventVarByGENIELabel.h"  
 #include "studies/PerMichel2DVar.h"
 #include "studies/PerMichel2DVarbin.h"
@@ -159,7 +160,8 @@ void LoopAndFillEventSelection(
         //if (universe->ShortName() != "cv") continue;
 	if (!cutResults.all()) continue;
         if (cutResults.all()){
-	    //setDistanceMichelSelection(*universe, myevent, 150.);
+	    /*
+            //setDistanceMichelSelection(*universe, myevent, 150.);
             setClosestMichel(*universe, myevent,0);
   	    //if (!myevent.m_nmichelspass.empty() and myevent.selection == 1){
 		for(auto& var: vars) {
@@ -232,10 +234,11 @@ void LoopAndFillEventSelection(
         //else{   	
           //myevent.m_nmichels = myevent.m_sidebandpass;
           //setDistanceMichelSidebands(*universe, myevent, 150., 500.);
-          setClosestMichel(*universe, myevent,1);
-	  if (!myevent.m_sidebandpass.empty() and myevent.sideband == 1){
+          */
+	  //setClosestMichel(*universe, myevent,1);
+	  //if (!myevent.m_sidebandpass.empty() and myevent.sideband == 1){
  	     //const double weight2 = model.GetWeight(*universe, myevent);
-             for(auto& var: sidevars) {
+          for(auto& var: sidevars) {
                 var->selectedMCReco->FillUniverse(universe, var->GetRecoValue(*universe), weight2); //"Fake data" for closure
                 (*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValue(*universe), weight2);
                 var->FillCategHistos(*universe,var->GetRecoValue(*universe), weight2);
@@ -245,8 +248,8 @@ void LoopAndFillEventSelection(
                 double truevar = var->GetTrueValue(*universe);
                 double recomtrue = reco - truevar;
                 var->recoMinusTrue->FillUniverse(universe, recomtrue, weight2);
-             }
-             for(auto& var: sidevars2D) {
+          }
+          for(auto& var: sidevars2D) {
                 var->mcTotalHist->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
                 (*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
                 var->FillCategHistos(*universe,var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
@@ -261,23 +264,23 @@ void LoopAndFillEventSelection(
                 var->biasMCReco->FillUniverse(universe,bias,var->GetRecoValueY(*universe), weight2);
                 var->recoMinusTrueRBins->FillUniverse(universe, recomtrueX, var->GetRecoValueY(*universe), weight2);
                 var->recoMinusTrueTBins->FillUniverse(universe, recomtrueX, var->GetTrueValueY(*universe), weight2);
-             }  // End of Side 2D vars loop
+           }  // End of Side 2D vars loop
              //for(auto& study: sideband_studies) study->SelectedSignal(*universe, myevent, weight2);
-	     const bool isSignal = michelcuts.isSignal(*universe, weight2); 
-	     if(isSignal){
-                        for(auto& var: sidevars)
-                        {
-                                var->migration->FillUniverse(universe, var->GetRecoValue(*universe), var->GetTrueValue(*universe), weight2);
-                                var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValue(*universe), weight2);
-                                var->selectedSignalReco->FillUniverse(universe, var->GetRecoValue(*universe), weight2); //Efficiency numerator in reco variables.  Useful for warping studies 
+	   const bool isSignal = michelcuts.isSignal(*universe, weight2); 
+	   if(isSignal){
+            for(auto& var: sidevars)
+            {
+                var->migration->FillUniverse(universe, var->GetRecoValue(*universe), var->GetTrueValue(*universe), weight2);
+                var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValue(*universe), weight2);
+                var->selectedSignalReco->FillUniverse(universe, var->GetRecoValue(*universe), weight2); //Efficiency numerator in reco variables.  Useful for warping studies 
 
-                        }
-                        for(auto& var: sidevars2D)
-                        {
-                                var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight2);
-                        }
-             } // end of if Signal()
- 	  } // End of If Sideband == 1
+            }
+            for(auto& var: sidevars2D)
+            {
+                var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight2);
+            }
+           } // end of if Signal()
+ 	 // } // End of If Sideband == 1
         //} // end of else if (!cutResults[0] && evt.sideband == 1) // To fill Sideband Variables
        } // If event passes PreCuts
       } // End band's universe loop
@@ -313,9 +316,9 @@ void LoopAndFillData( PlotUtils::ChainWrapper* data,
       const auto cutResults = michelcuts.isDataSelected(*universe, myevent);
       if (!cutResults.all()) continue;
       if (cutResults.all()){
-      	setDistanceMichelSelection(*universe, myevent, 150.);
-        setClosestMichel(*universe, myevent,0);
-        if (!myevent.m_nmichelspass.empty() and myevent.selection ==1){
+      	//setDistanceMichelSelection(*universe, myevent, 150.);
+        //setClosestMichel(*universe, myevent,0);
+        /*if (!myevent.m_nmichelspass.empty() and myevent.selection ==1){
 
       		//std::cout << "Filling Data STudies" << std::endl;
       		//for(auto& study: studies) study->Selected(*universe, myevent, 1); 
@@ -332,23 +335,23 @@ void LoopAndFillData( PlotUtils::ChainWrapper* data,
         		var->dataHist->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), 1);
       		}
      	}	 // End of if (michelcuts.isDataSelected(*universe, myevent).all()) -> filling Selection
-        else{
-          setDistanceMichelSidebands(*universe, myevent, 150., 500.);
-          setClosestMichel(*universe, myevent,1);
-          if (!myevent.m_sidebandpass.empty() and myevent.sideband == 1){
+        else{*/
+          //setDistanceMichelSidebands(*universe, myevent, 150., 500.);
+          //setClosestMichel(*universe, myevent,1);
+          //if (!myevent.m_sidebandpass.empty() and myevent.sideband == 1){
         	//for(auto& study: data_sidebands) study->Selected(*universe, myevent, 1); 
 
-        	for(auto& var: sidevars)
-        	{
-          	     var->dataHist->FillUniverse(universe, var->GetRecoValue(*universe), 1);
-        	}
+           for(auto& var: sidevars)
+           {
+         	var->dataHist->FillUniverse(universe, var->GetRecoValue(*universe), 1);
+           }
 
-        	for(auto& var: sidevars2D)
-        	{
-          	    var->dataHist->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), 1);
-        	}
-     	} // End of else for Filling Sideband Variables
-       } // End of  else if no michelspass
+           for(auto& var: sidevars2D)
+           {
+                var->dataHist->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), 1);
+           }
+     	//} // End of else for Filling Sideband Variables
+       //} // End of  else if no michelspass
       }// End of PreCuts Pass
     //} // End of Data Band 
    } // End of Entries
@@ -357,8 +360,8 @@ void LoopAndFillData( PlotUtils::ChainWrapper* data,
 
 void LoopAndFillEffDenom( PlotUtils::ChainWrapper* truth,
     				std::map<std::string, std::vector<CVUniverse*> > truth_bands,
-    				std::vector<Variable*> vars,
-                                std::vector<Variable2D*> vars2D,
+    				std::vector<Variable*> sidevars,
+                                std::vector<Variable2D*> sidevars2D,
  			        //std::vector<Study*> studies,
     				PlotUtils::Cutter<CVUniverse, MichelEvent>& michelcuts,
                                 PlotUtils::Model<CVUniverse, MichelEvent>& model)
@@ -393,14 +396,14 @@ void LoopAndFillEffDenom( PlotUtils::ChainWrapper* truth,
         const double weight = model.GetWeight(*universe, myevent); //Only calculate the weight for events that will use it
 
         //Fill efficiency denominator now: 
-        for(auto var: vars)
+        for(auto var: sidevars)
         {
           var->efficiencyDenominator->FillUniverse(universe, var->GetTrueValue(*universe), weight);
         }
         // Fill Studies denominator:
 //        for(auto& study: studies) study->SelectedSignal(*universe, cvEvent, weight);
 
-        for(auto var: vars2D)
+        for(auto var: sidevars2D)
         {
           var->efficiencyDenominator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight);
         }
@@ -599,9 +602,9 @@ int main(const int argc, const char** argv)
   std::vector<double> rangebins = {0, 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 44., 50., 56., 62., 70., 80.,90., 100., 110.,  120., 140., 160., 180., 200., 220., 240., 260., 280., 300., 325., 350., 375., 400., 450., 500., 550., 600., 650., 700., 800., 900., 1000., 1200., 1400., 1800., 2400.};             
   //std::vector<double> tpibins = {0., 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 46., 52., 60.,  70., 80., 90., 100., 120., 140., 160., 180., 200., 220., 240., 260.,280., 300., 320., 340., 360., 380., 400., 500., 1000.};
   //std::vector<double> rangebins = {0., 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 46., 52., 60., 70., 80., 90., 100., 120., 140., 160., 180., 200., 220., 260., 280., 300., 320., 340., 360., 380., 400., 425., 450., 475., 500., 600., 700., 800., 1000., 1200., 1400., 1600., 2000., 2400.}; 
-  std::vector<double> recoilbins = {0.0, 150., 200., 300., 400., 500., 600., 800., 1000., 1200., 1400., 1600.};
-  const double robsRecoilBinWidth = 50; //MeV
-  for(int whichBin = 0; whichBin < 30 + 1; ++whichBin) robsRecoilBins.push_back(robsRecoilBinWidth * whichBin);
+  std::vector<double> recoilbins = {0.0, 200., 300., 400., 500., 600., 800., 1000., 1200., 1400., 1600.};
+  const double robsRecoilBinWidth = 75; //MeV
+  for(int whichBin = 0; whichBin < 20 + 1; ++whichBin) robsRecoilBins.push_back(robsRecoilBinWidth * whichBin);
 
   std::vector<Variable*> vars = {
     new Variable("pTmu", "p_{T, #mu} [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue), //0
@@ -647,10 +650,10 @@ int main(const int argc, const char** argv)
   std::map<std::string, std::vector<CVUniverse*> > data_error_bands;
   data_error_bands["cv"] = data_band;
   
-  for(auto& var: vars) var->InitializeMCHists(error_bands, truth_bands);
-  for(auto& var: vars) var->InitializeDATAHists(data_band);
-  for(auto& var: vars2D) var->InitializeMCHists(error_bands, truth_bands);
-  for(auto& var: vars2D) var->InitializeDATAHists(data_band);
+  //for(auto& var: vars) var->InitializeMCHists(error_bands, truth_bands);
+  //for(auto& var: vars) var->InitializeDATAHists(data_band);
+  //for(auto& var: vars2D) var->InitializeMCHists(error_bands, truth_bands);
+  //for(auto& var: vars2D) var->InitializeDATAHists(data_band);
   for(auto& var: sidevars) var->InitializeDATAHists(data_band);
   for(auto& var: sidevars) var->InitializeMCHists(error_bands, truth_bands);
   for(auto& var: sidevars2D) var->InitializeMCHists(error_bands, truth_bands);
@@ -689,11 +692,11 @@ int main(const int argc, const char** argv)
       return badOutputFile;
     }
     
-    std::cout << "Saving Histos to MC Files" << std::endl;
-    for(auto& var: vars) var->WriteMC(*mcOutDir);
-    std::cout << "WRiting 2D VARS to event level file " << std::endl;
-    for(auto& var: vars2D) var->Write(*mcOutDir);
-    std::cout << "Saving Histos to Data Files" << std::endl;
+    //std::cout << "Saving Histos to MC Files" << std::endl;
+    //for(auto& var: vars) var->WriteMC(*mcOutDir);
+    //std::cout << "WRiting 2D VARS to event level file " << std::endl;
+    //for(auto& var: vars2D) var->Write(*mcOutDir);
+    //std::cout << "Saving Histos to Data Files" << std::endl;
    
     //
     for(auto& var: sidevars) var->WriteMC(*mcSideDir);
@@ -720,7 +723,7 @@ int main(const int argc, const char** argv)
     PlotUtils::TargetUtils targetInfo;
     assert(error_bands["cv"].size() == 1 && "List of error bands must contain a universe named \"cv\" for the flux integral.");
     std::cout << "Looping over Vars to fill systematics" << std::endl;
-    for(const auto& var: vars)
+    for(const auto& var: sidevars)
     {
       //Flux integral only if systematics are being done (temporary solution)
       util::GetFluxIntegral(*error_bands["cv"].front(), var->efficiencyNumerator->hist)->Write((var->GetName() + "_reweightedflux_integrated").c_str());
@@ -744,8 +747,8 @@ int main(const int argc, const char** argv)
     }
 
     std::cout << "Writing Data Vars" << std::endl;
-    for(auto& var: vars) var->WriteData(*dataOutDir);
-    for(auto& var: vars2D) var->Write(*dataOutDir);
+    //for(auto& var: vars) var->WriteData(*dataOutDir);
+    //for(auto& var: vars2D) var->Write(*dataOutDir);
     for(auto& var: sidevars) var->WriteData(*dataSideDir);
     for(auto& var: sidevars2D) var->Write(*dataSideDir); 
    //Protons On Target

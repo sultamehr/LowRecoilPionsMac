@@ -9,7 +9,9 @@
 #include "util/Categorized.h"
 #include "event/CVUniverse.h"
 #include "PlotUtils/VariableBase.h"
-#include "studies/TruthInteractionStudies.h"
+//#include "studies/TruthInteractionStudies.h"
+#include "util/PionFSCategory.h"
+
 //c++ includes
 #include <functional> //for std::function
 

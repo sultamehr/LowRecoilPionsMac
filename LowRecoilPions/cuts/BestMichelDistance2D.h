@@ -21,6 +21,8 @@ class BestMichelDistance2D: public PlotUtils::Cut<UNIVERSE, EVENT>
     {
       //std::cout << "Implementing Michel Cut with 2D distnace of " << m_maxDistance << " mm" << std::endl;
       std::vector<Michel> nmichelspass;
+      int nmichels = evt.m_allmichels.size();
+      if (nmichels == 0) return false;
       for (unsigned int i = 0; i < evt.m_allmichels.size(); i++)
       {
 

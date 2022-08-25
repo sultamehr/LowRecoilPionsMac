@@ -5,7 +5,8 @@
 #include "event/CVUniverse.h"
 #include "util/SafeROOTName.h"
 #include "util/Categorized.h"
-#include "util/TruthInteractionStudies.h"
+//#include "util/TruthInteractionStudies.h"
+#include "util/PionFSCategory.h"
 //PlotUtils includes
 #include "PlotUtils/VariableBase.h"
 #include "PlotUtils/HistWrapper.h"
