@@ -337,8 +337,22 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
      return ntruemichels;
   }
 
+ virtual bool GetTrueIsFSPartInEvent(const int pdg) const {
+     std::vector<int> FSparts = GetTrueFSPDGCodes();
+     std::vector<int>::iterator it;
+     it = std::find(FSparts.begin(), FSparts.end(), pdg);
+     if (it != FSparts.end())
+     {
+	return true;
+     }
+     else return false;
+
+ }
+
+
  virtual int GetTrueNPionsinEvent() const {
      int npion = 0;
+     
      int pdgsize = GetInt("mc_nFSPart");
      for (int i = 0; i< pdgsize; i++)
       {
@@ -458,7 +472,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
        
       return pionKE;
    }
- virtual void PrintArachneLink() const {
+ virtual void PrintTrueArachneLink() const {
   int link_size = 200;
   char link[link_size];
   int run = GetInt("mc_run");
@@ -466,14 +480,36 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   int gate = GetInt("mc_nthEvtInFile") + 1;
   int slice = GetVecElem("slice_numbers", 0);
   sprintf(link,
-          "http://minerva05.fnal.gov/Arachne/"
+          "https://minerva05.fnal.gov/Arachne/"
           "arachne.html\?det=SIM_minerva&recoVer=v21r1p1&run=%d&subrun=%d&gate="
           "%d&slice=%d",
           run, subrun, gate, slice);
-       // strncpy(); // FAIL
-       // memcpy();  // FAIL
-       std::cout << link << std::endl;
+       if(NewEavail() < 50. && GetMuonPT() < .20){
+       	std::cout << link << std::endl;
+       	std::cout << "Lepton E: " <<  GetElepTrueGeV() << " Run " << run << "/"<<subrun << "/" << gate << "/" << slice << std::endl;
+       }
+
  }
+
+ virtual void PrintDataArachneLink() const {
+  int link_size = 200;
+  char link[link_size];
+  int run = GetInt("ev_run");
+  int subrun = GetInt("ev_subrun");
+  int gate = GetInt("ev_gate");
+  int slice = GetVecElem("slice_numbers", 0);
+  sprintf(link,
+          "https://minerva05.fnal.gov/Arachne/"
+          "arachne.html\?det=MV&recoVer=v21r1p1&run=%d&subrun=%d&gate="
+          "%d&slice=%d",
+          run, subrun, gate, slice);
+       if(NewEavail() < 50. && GetMuonPT() < .20){
+        std::cout << link << std::endl;
+        std::cout << "Lepton E: " <<  GetMuonPT() << " Run " << run << "/"<<subrun << "/" << gate << "/" << slice << std::endl;
+       }
+
+ }
+ 
 
 
  virtual double GetClusterEnergyTracker() const
@@ -576,7 +612,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
      int pdgsize = GetInt("mc_nFSPart");
      for (int i = 0; i< pdgsize; i++)
      {
-        int pdg = abs(GetVecElem("mc_FSPartPDG", i));  
+        int pdg = GetVecElem("mc_FSPartPDG", i);  
         double energy = GetVecElem("mc_FSPartE", i); // hopefully this is in MeV
         /* 
         if(abs(pdg) == 211){ // charged pions (kinetic energy)
@@ -613,14 +649,14 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
    	 Eavail += energy;
         }
         */	  
-        if (abs(pdg) == 211) Eavail+= energy - 139.57; // subtracting pion mass to get Kinetic energy
+        if (pdg == 211) Eavail+= energy - 139.57; // subtracting pion mass to get Kinetic energy
         else if (abs(pdg) == 2212) Eavail += energy - 938.28; // proton
         else if (pdg == 111) Eavail += energy; // pi0
         else if (pdg == 22) Eavail += energy; // photons
         else if (pdg == 311) Eavail += energy - 497.611/2.0; // K0 ???? - Kaon rest mass / 2
         else if (abs(pdg) == 321) Eavail += energy - 497.611/2.0; // Kaon+ Kinetic Energy  divide by Kmass/2 
         else if (pdg == 551) Eavail += energy; //Adding etas
-	else if (abs(pdg) !=  2112) Eavail += energy; //Adding anything else except neutrons.  
+	//else if (abs(pdg) !=  2112) Eavail += energy; //Adding anything else except neutrons.  
        
      }
      //std::cout << "True Eavail is " << Eavail << " --- Reco Eavail is " << GetEavail() << "New EAvail is " << GetNewEavail() << std::endl;

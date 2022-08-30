@@ -75,7 +75,8 @@ class GetClosestMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
            closestMichel.push_back(evt.m_nmichels[i]);
          }	
 	 else {
-    	   evt.m_idx = -1;
+    	  // if (evt.m_nmichels[i].OrderOfMichel == 2) closestMichel.push_back(evt.m_nmichels[i]);
+	   evt.m_idx = -1;
 	 }
         
        }
@@ -86,6 +87,15 @@ class GetClosestMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
        evt.eavail_reco = univ.NewEavail();  
        evt.m_nmichels.clear();
        evt.m_nmichels = closestMichel;
+       if (univ.GetMuonPT() < .20 and univ.NewEavail() < 50. and !evt.m_nmichels.empty())
+       {
+	     univ.PrintTrueArachneLink();
+	     univ.PrintDataArachneLink();
+	     std::cout << "Best Michel at time: " << evt.m_nmichels[0].time << " range: " << evt.m_nmichels[0].Best3Ddist << " energy: " << evt.m_nmichels[0].energy << std::endl;
+	     		
+	
+          
+       }
        return true;       
        //return !evt.m_nmichels.empty();
     };

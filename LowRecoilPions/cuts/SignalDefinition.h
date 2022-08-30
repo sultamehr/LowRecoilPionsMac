@@ -71,3 +71,24 @@ class pTRangeLimit: public PlotUtils::SignalConstraint<UNIVERSE>
       return truepT > fpTMin && truepT < fpTMax;
     }
 };
+
+
+template <class UNIVERSE>
+class q0RangeLimit: public PlotUtils::SignalConstraint<UNIVERSE>
+{
+  public:
+    q0RangeLimit(const double min, const double max): PlotUtils::SignalConstraint<UNIVERSE>(std::to_string(min) + "True q0 < " + std::to_string(max) + " GeV"),
+    fMin(min),
+    fMax(max)
+    {
+    }
+
+  private:
+    double fMax; //Maximum q0 allowed in GeV/c
+    double fMin; //Min q0 allowed in GeV/c
+    bool checkConstraint(const UNIVERSE& univ) const //override
+    {
+      double trueq0 = univ.GetTrueQ0GeV();
+      return trueq0 > fMin && trueq0 < fMax;
+    }
+};

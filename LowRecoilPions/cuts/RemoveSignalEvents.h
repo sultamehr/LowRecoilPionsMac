@@ -24,8 +24,10 @@ class RemoveSignalEvents: public PlotUtils::Cut<UNIVERSE, EVENT>
       int nmichels = evt.m_allmichels.size();
       if (nmichels == 0) return false;
       int npass = 0;
+      int nmichelsloop = 0;
       for (unsigned int i = 0; i < evt.m_allmichels.size(); i++)
       {
+	nmichelsloop++;
 
         // For Vertex Match Check to see if 2D distance cut will
         double upvtxXZ = evt.m_allmichels[i].up_to_vertex_XZ;
@@ -45,7 +47,17 @@ class RemoveSignalEvents: public PlotUtils::Cut<UNIVERSE, EVENT>
         //if(upvtx[0] < m_maxDistance && upvtx[1] < m_maxDistance) evt.m_allmichels[i].passable_matchtype.at(0) = 1;
 	//if(downvtx[0] < m_maxDistance && downvtx[1] < m_maxDistance) evt.m_allmichels[i].passable_matchtype.at(1) = 2;       
  
-        
+        if (upvtxXZ < m_maxDistance && (upvtxUZ < m_maxDistance || upvtxVZ < m_maxDistance)) break;
+        else if (upvtxUZ < m_maxDistance && (upvtxXZ < m_maxDistance || upvtxVZ < m_maxDistance)) break;
+        else if (upvtxVZ < m_maxDistance && (upvtxXZ < m_maxDistance || upvtxUZ < m_maxDistance)) break;
+        else evt.m_allmichels[i].passable_matchtype.at(0) = -1;
+
+        if (downvtxXZ < m_maxDistance && (downvtxUZ < m_maxDistance || downvtxVZ < m_maxDistance)) break;
+        else if (downvtxUZ < m_maxDistance && (downvtxXZ < m_maxDistance || downvtxVZ < m_maxDistance)) break;
+        else if (downvtxVZ < m_maxDistance && (downvtxXZ < m_maxDistance || downvtxUZ < m_maxDistance)) break;
+        else evt.m_allmichels[i].passable_matchtype.at(1) = -1;
+
+        /*
         if (upvtxXZ < m_maxDistance && (upvtxUZ < m_maxDistance || upvtxVZ < m_maxDistance)) evt.m_allmichels[i].passable_matchtype.at(0) = 1;
         else if (upvtxUZ < m_maxDistance && (upvtxXZ < m_maxDistance || upvtxVZ < m_maxDistance)) evt.m_allmichels[i].passable_matchtype.at(0) = 1;
         else if (upvtxVZ < m_maxDistance && (upvtxXZ < m_maxDistance || upvtxUZ < m_maxDistance)) evt.m_allmichels[i].passable_matchtype.at(0) = 1;
@@ -147,7 +159,8 @@ class RemoveSignalEvents: public PlotUtils::Cut<UNIVERSE, EVENT>
 
 		continue;
       	} 
-        //nmichelspass.push_back(evt.m_allmichels[i]);  
+        */
+	  //nmichelspass.push_back(evt.m_allmichels[i]);  
         //evt.m_nmichelspass.push_back(evt.m_allmichels[i]);  
      }
       
@@ -160,7 +173,7 @@ class RemoveSignalEvents: public PlotUtils::Cut<UNIVERSE, EVENT>
         //evt.m_nmichels.clear();
         //evt.m_nmichels = nmichelspass; // replace vector of michels with the vector of michels that passed the above cut
       //}
-      if (npass > 0) return false;
+      if (nmichelsloop < nmichels) return false;
       else return true;
      // evt.m_nmichelspass = nmichelspass;
       //return true; 

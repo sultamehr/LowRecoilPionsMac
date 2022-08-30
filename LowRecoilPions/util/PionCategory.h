@@ -44,7 +44,7 @@ class FSCategory
 	bool kplus = univ.GetTrueIsFSPartInEvent(321);
 	bool pi0 = univ.GetTrueIsFSPartInEvent(111); //univ.GetTrueNPi0inEvent();
 	int qelike = 0;
- 	int npions = univ.GetTrueNPionsinEvent();
+ 	
  	if (interaction==4 && fForbidden.count(4) == 1 ){ return true;}
 	//else if (interaction==3){return false;}
 	else {
@@ -59,11 +59,10 @@ class FSCategory
 		}
                 */
 
-		if (pion == true && npions >= 1 && k0 == false && pi0 == false && kplus == false && fForbidden.count(9999) == 1) return true;
-		else if (pion == true && npions >= 1 && (k0 == true || pi0 == true || kplus == true ) && fForbidden.count(2) == 1) return true;
+		if (pion == true && fForbidden.count(9999) == 1) return true;
 		else if ((k0 == true || kplus == true) && fRequired.count(321) == 1 ) return true;
 		else if (pi0 == true && fRequired.count(111) == 1) return true;
-		else if (pion == false && k0 == false && kplus == false && pi0 == false && fRequired.count(9999) == 1) return true;
+		else if (pions == false && k0 == false && kplus == false && pi0 == false && fRequired.count(9999) == 1) return true;
 		else return false;
         	//return true;
 	}
@@ -80,9 +79,8 @@ class FSCategory
 const std::vector<FSCategory*> pionFSCategories = {   new FSCategory("QE-like", {211, 111, 321, 311}, {9999}),
                                                       //new FSCategory("Single Pi Plus", {-1}, {211}),
 						      new FSCategory("COH Pions", {4}, {211}),
-						      new FSCategory("NPi Plus Only", {9999}, {211}),
-						      new FSCategory("NPi and Other Mesons", {2}, {211}),
-						      new FSCategory("Neutral Pi Only", {321, 311, 211}, {111}),
+						      new FSCategory("Non-COH Pi Plus", {9999}, {211}),
+                                                      new FSCategory("Neutral Pi Only", {321, 311, 211}, {111}),
                                                       new FSCategory("Kaons Only",{211, 111, 311}, {321}),
 						      					      				      
                                                       //new FSCategory("NoneAbove", {2212,211, 111, 321, 311}),

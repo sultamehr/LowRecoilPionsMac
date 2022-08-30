@@ -1,7 +1,7 @@
-#define MC_OUT_FILE_NAME "runEventLoopMC_Aug122022_1000mm_pTbin6_noreweight.root"
-#define DATA_OUT_FILE_NAME "runEventLoopData_Aug122022_1000mm_pTbin6_noreweight.root"
-#define MC_SIDE_FILE_NAME "runEventLoopMC_Aug122022_Sideband1000_pTbin6_noreweight.root"
-#define DATA_SIDE_FILE_NAME "runEventLoopDATA_Aug122022_Sideband1000_pTbin6_noreweight.root"
+#define MC_OUT_FILE_NAME "runEventLoopMC_Aug292022_1000mm_pTbin6_noreweight.root"
+#define DATA_OUT_FILE_NAME "runEventLoopData_Aug292022_1000mm_pTbin6_noreweight.root"
+#define MC_SIDE_FILE_NAME "runEventLoopMC_Aug292022_Sideband1000_pTbin6_noreweight.root"
+#define DATA_SIDE_FILE_NAME "runEventLoopDATA_Aug292022_Sideband1000_pTbin6_noreweight.root"
 
 
 #define USAGE \
@@ -79,6 +79,7 @@ enum ErrorCodes
 #include "cuts/PTRangeReco.h"
 #include "cuts/GetClosestMichel.h"
 #include "cuts/Distance2DSideband.h"
+#include "cuts/RecoilERange.h"
 #include "event/SetDistanceMichelSideband.h"
 #include "event/SetDistanceMichelSelection.h"
 #include "event/GetClosestMichel.h"
@@ -242,7 +243,8 @@ void LoopAndFillEventSelection(
                 var->selectedMCReco->FillUniverse(universe, var->GetRecoValue(*universe), weight2); //"Fake data" for closure
                 (*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValue(*universe), weight2);
                 var->FillCategHistos(*universe,var->GetRecoValue(*universe), weight2);
-                //var->migration->FillUniverse(universe, var->GetRecoValue(*universe), var->GetTrueValue(*universe), weight2);
+                
+		//var->migration->FillUniverse(universe, var->GetRecoValue(*universe), var->GetTrueValue(*universe), weight2);
                 //var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValue(*universe), weight2);
                 double reco = var->GetRecoValue(*universe);
                 double truevar = var->GetTrueValue(*universe);
@@ -308,7 +310,7 @@ void LoopAndFillData( PlotUtils::ChainWrapper* data,
     //for (auto universe : data_band) {
       const auto universe = data_band.front();
       universe->SetEntry(i);
-      if(i%1000==0) std::cout << i << " / " << nEntries << "\r" << std::flush;
+      //if(i%1000==0) std::cout << i << " / " << nEntries << "\r" << std::flush;
       //std::cout << "Creating Michel Event" << std::endl;
       //if (universe->ShortName() != "cv") continue;
       MichelEvent myevent; 
@@ -340,7 +342,7 @@ void LoopAndFillData( PlotUtils::ChainWrapper* data,
           //setClosestMichel(*universe, myevent,1);
           //if (!myevent.m_sidebandpass.empty() and myevent.sideband == 1){
         	//for(auto& study: data_sidebands) study->Selected(*universe, myevent, 1); 
-
+	   //universe->PrintArachneLink();
            for(auto& var: sidevars)
            {
          	var->dataHist->FillUniverse(universe, var->GetRecoValue(*universe), 1);
@@ -532,11 +534,7 @@ int main(const int argc, const char** argv)
   preCuts.emplace_back(new reco::IsNeutrino<CVUniverse, MichelEvent>());
   //preCuts.emplace_back(new Q3RangeReco<CVUniverse, MichelEvent>(0.0,1.2));
   preCuts.emplace_back(new PTRangeReco<CVUniverse, MichelEvent>(0.0,1.0));
-
-  //preCuts.emplace_back(new hasMichel<CVUniverse, MichelEvent>());
-  //preCuts.emplace_back(new BestMichelDistance2D<CVUniverse, MichelEvent>(100.));
-  //preCuts.emplace_back(new VtxMatchFirst<CVUniverse, MichelEvent>(200., 102.));
-  //preCuts.emplace_back(new NPiCut<CVUniverse, MichelEvent>(1));
+  preCuts.emplace_back(new RecoilERange<CVUniverse, MichelEvent>(0.0,1.5));
   preCuts.emplace_back(new hasMichel<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new RemoveSignalEvents<CVUniverse, MichelEvent>(150.)); 
   preCuts.emplace_back(new Distance2DSideband<CVUniverse, MichelEvent>(1000.));
@@ -558,7 +556,9 @@ int main(const int argc, const char** argv)
   phaseSpace.emplace_back(new truth::Apothem<CVUniverse>(apothem));
   phaseSpace.emplace_back(new truth::MuonAngle<CVUniverse>(20.));
   phaseSpace.emplace_back(new truth::PZMuMin<CVUniverse>(1500.));
-  phaseSpace.emplace_back(new truth::pTRangeLimit<CVUniverse>(0., 1.0));                                                                                                                                                 
+  phaseSpace.emplace_back(new truth::pTRangeLimit<CVUniverse>(0., 1.0));
+  //phaseSpace.emplace_back(new truth::q0RangeLimit<CVUniverse>(0.0, .7));
+
   PlotUtils::Cutter<CVUniverse, MichelEvent> mycuts(std::move(preCuts), std::move(sidebands) , std::move(signalDefinition),std::move(phaseSpace));
 
   std::vector<std::unique_ptr<PlotUtils::Reweighter<CVUniverse, MichelEvent>>> MnvTunev1;
@@ -632,11 +632,11 @@ int main(const int argc, const char** argv)
  vars2D.push_back(new Variable2D(*vars[6], *vars[10])); //Eavailbins(y) vs Eavail
  vars2D.push_back(new Variable2D(*vars[8], *vars[12])); //Eavailq0bins(y) vs Eavail
  vars2D.push_back(new Variable2D(*vars[7], *vars[11])); //RecoilEq0bins(y) vs RecoilE
- vars2D.push_back(new Variable2D(*vars[6], *vars[13])); //q3bins(y) vs Eavail
- vars2D.push_back(new Variable2D(*vars[7], *vars[13])); //q3bins(y) vs RecoilE
- vars2D.push_back(new Variable2D(*vars[0], *vars[13])); //q3bins(y) vs pTmu
- vars2D.push_back(new Variable2D(*vars[3], *vars[13])); //q3bins(y) vs pz
- vars2D.push_back(new Variable2D(*vars[2], *vars[13])); //q3bins(y) vs q2
+ //vars2D.push_back(new Variable2D(*vars[6], *vars[13])); //q3bins(y) vs Eavail
+ //vars2D.push_back(new Variable2D(*vars[7], *vars[13])); //q3bins(y) vs RecoilE
+ //vars2D.push_back(new Variable2D(*vars[0], *vars[13])); //q3bins(y) vs pTmu
+ //vars2D.push_back(new Variable2D(*vars[3], *vars[13])); //q3bins(y) vs pz
+ //vars2D.push_back(new Variable2D(*vars[2], *vars[13])); //q3bins(y) vs q2
 
  std::vector<Variable*> sidevars = vars; 
 
@@ -650,14 +650,14 @@ int main(const int argc, const char** argv)
   std::map<std::string, std::vector<CVUniverse*> > data_error_bands;
   data_error_bands["cv"] = data_band;
   
-  //for(auto& var: vars) var->InitializeMCHists(error_bands, truth_bands);
-  //for(auto& var: vars) var->InitializeDATAHists(data_band);
-  //for(auto& var: vars2D) var->InitializeMCHists(error_bands, truth_bands);
-  //for(auto& var: vars2D) var->InitializeDATAHists(data_band);
-  for(auto& var: sidevars) var->InitializeDATAHists(data_band);
-  for(auto& var: sidevars) var->InitializeMCHists(error_bands, truth_bands);
-  for(auto& var: sidevars2D) var->InitializeMCHists(error_bands, truth_bands);
-  for(auto& var: sidevars2D) var->InitializeDATAHists(data_band);  
+  for(auto& var: vars) var->InitializeMCHists(error_bands, truth_bands);
+  for(auto& var: vars) var->InitializeDATAHists(data_band);
+  for(auto& var: vars2D) var->InitializeMCHists(error_bands, truth_bands);
+  for(auto& var: vars2D) var->InitializeDATAHists(data_band);
+  //for(auto& var: sidevars) var->InitializeDATAHists(data_band);
+  //for(auto& var: sidevars) var->InitializeMCHists(error_bands, truth_bands);
+  //for(auto& var: sidevars2D) var->InitializeMCHists(error_bands, truth_bands);
+  //for(auto& var: sidevars2D) var->InitializeDATAHists(data_band);  
 
   // Loop entries and fill
   try
@@ -678,13 +678,13 @@ int main(const int argc, const char** argv)
     
     std::cout  << "Opening the MCOUTPUT for EVENT hists" << std::endl;
     //Write MC results
-    TFile* mcOutDir = TFile::Open(MC_OUT_FILE_NAME, "RECREATE");
+    //TFile* mcOutDir = TFile::Open(MC_OUT_FILE_NAME, "RECREATE");
     TFile* mcSideDir = TFile::Open(MC_SIDE_FILE_NAME, "RECREATE");
-    if(!mcOutDir)
-    {
-      std::cerr << "Failed to open a file named " << MC_OUT_FILE_NAME << " in the current directory for writing histograms.\n";
-      return badOutputFile;
-    }
+    //if(!mcOutDir)
+   // {
+   //   std::cerr << "Failed to open a file named " << MC_OUT_FILE_NAME << " in the current directory for writing histograms.\n";
+   //   return badOutputFile;
+   // }
     
     if(!mcSideDir)
     {
@@ -699,9 +699,9 @@ int main(const int argc, const char** argv)
     //std::cout << "Saving Histos to Data Files" << std::endl;
    
     //
-    for(auto& var: sidevars) var->WriteMC(*mcSideDir);
+    for(auto& var: vars) var->WriteMC(*mcSideDir);
     std::cout << "WRiting 2D VARS to event level file " << std::endl;
-    for(auto& var: sidevars2D) var->Write(*mcSideDir);
+    for(auto& var: vars2D) var->Write(*mcSideDir);
     std::cout << "Saving Histos to Data Files" << std::endl;
 
 
@@ -713,12 +713,12 @@ int main(const int argc, const char** argv)
     std::cout << "Printing POT MC " << std::endl;
     auto mcPOT = new TParameter<double>("POTUsed", options.m_mc_pot);
     mcPOT->Write();
-    mcOutDir->cd();
-    mcPOT->Write();
+    //mcOutDir->cd();
+    //mcPOT->Write();
     
     mcSideDir->cd();
     mcPOT->Write();
-    
+    mcSideDir->cd();
 
     PlotUtils::TargetUtils targetInfo;
     assert(error_bands["cv"].size() == 1 && "List of error bands must contain a universe named \"cv\" for the flux integral.");
@@ -733,13 +733,13 @@ int main(const int argc, const char** argv)
     }
     std::cout << "Writing Data Results" << std::endl;
     //Write data results
-    TFile* dataOutDir = TFile::Open(DATA_OUT_FILE_NAME, "RECREATE");
+    //TFile* dataOutDir = TFile::Open(DATA_OUT_FILE_NAME, "RECREATE");
     TFile* dataSideDir = TFile::Open(DATA_SIDE_FILE_NAME, "RECREATE");
-    if(!dataOutDir)
-    {
-      std::cerr << "Failed to open a file named " << DATA_OUT_FILE_NAME << " in the current directory for writing histograms.\n";
-      return badOutputFile;
-    }
+   // if(!dataOutDir)
+   // {
+   //   std::cerr << "Failed to open a file named " << DATA_OUT_FILE_NAME << " in the current directory for writing histograms.\n";
+   //   return badOutputFile;
+   // }
     if(!dataSideDir)
     {
       std::cerr << "Failed to open a file named " << DATA_SIDE_FILE_NAME << " in the current directory for writing histograms.\n";
@@ -749,13 +749,13 @@ int main(const int argc, const char** argv)
     std::cout << "Writing Data Vars" << std::endl;
     //for(auto& var: vars) var->WriteData(*dataOutDir);
     //for(auto& var: vars2D) var->Write(*dataOutDir);
-    for(auto& var: sidevars) var->WriteData(*dataSideDir);
-    for(auto& var: sidevars2D) var->Write(*dataSideDir); 
+    for(auto& var: vars) var->WriteData(*dataSideDir);
+    for(auto& var: vars2D) var->Write(*dataSideDir); 
    //Protons On Target
     auto dataPOT = new TParameter<double>("POTUsed", options.m_data_pot);
     dataPOT->Write();
-    dataOutDir->cd();
-    dataPOT->Write();
+    //dataOutDir->cd();
+    //dataPOT->Write();
     dataSideDir->cd();
     dataPOT->Write();
     std::cout << "Success" << std::endl;

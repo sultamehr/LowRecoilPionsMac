@@ -78,6 +78,7 @@ enum ErrorCodes
 #include "cuts/PTRangeReco.h"
 #include "cuts/GetClosestMichel.h"
 #include "cuts/Distance2DSideband.h"
+#include "cuts/RecoilERange.h"
 #include "event/SetDistanceMichelSideband.h"
 #include "event/SetDistanceMichelSelection.h"
 #include "event/GetClosestMichel.h"
@@ -403,24 +404,17 @@ int main(const int argc, const char** argv)
   preCuts.emplace_back(new reco::IsNeutrino<CVUniverse, MichelEvent>());
   //preCuts.emplace_back(new Q3RangeReco<CVUniverse, MichelEvent>(0.0,1.2));
   preCuts.emplace_back(new PTRangeReco<CVUniverse, MichelEvent>(0.0,1.0));
+  preCuts.emplace_back(new RecoilERange<CVUniverse, MichelEvent>(0.0,1.5));
 
-  //preCuts.emplace_back(new hasMichel<CVUniverse, MichelEvent>());
-  //preCuts.emplace_back(new BestMichelDistance2D<CVUniverse, MichelEvent>(100.));
-  //preCuts.emplace_back(new VtxMatchFirst<CVUniverse, MichelEvent>(200., 102.));
-  //preCuts.emplace_back(new NPiCut<CVUniverse, MichelEvent>(1));
   preCuts.emplace_back(new hasMichel<CVUniverse, MichelEvent>());
   //preCuts.emplace_back(new Distance2DSideband<CVUniverse, MichelEvent>(500.));
   
   preCuts.emplace_back(new BestMichelDistance2D<CVUniverse, MichelEvent>(150.));
   preCuts.emplace_back(new GetClosestMichel<CVUniverse, MichelEvent>(0));
-  //nosidebands.emplace_back(new BestMichelDistance2D<CVUniverse, MichelEvent>(150.));
-  //nosidebands.emplace_back(new GetClosestMichel<CVUniverse, MichelEvent>(0));
 
 
   TFile* mc_MichelStudies = TFile::Open("Aug172022_EavailComp_noreweight_pTbin6_MC.root", "RECREATE");
   TFile* data_MichelStudies = TFile::Open("Aug172022_EavailComp_noreweight_pTbin6_data.root", "RECREATE");
-  TFile* mc_SidebandStudies = TFile::Open("Aug122022_Sideband_noreweight_pTbin6_MC.root", "RECREATE");
-  TFile* data_SidebandStudies = TFile::Open("Aug122022_Sideband_noreweight_pTbin6_data.root", "RECREATE");
 
   signalDefinition.emplace_back(new truth::IsNeutrino<CVUniverse>());
   signalDefinition.emplace_back(new truth::IsCC<CVUniverse>());
@@ -434,7 +428,9 @@ int main(const int argc, const char** argv)
   phaseSpace.emplace_back(new truth::Apothem<CVUniverse>(apothem));
   phaseSpace.emplace_back(new truth::MuonAngle<CVUniverse>(20.));
   phaseSpace.emplace_back(new truth::PZMuMin<CVUniverse>(1500.));
-  phaseSpace.emplace_back(new truth::pTRangeLimit<CVUniverse>(0., 1.0));                                                                                                                                                 
+  phaseSpace.emplace_back(new truth::pTRangeLimit<CVUniverse>(0., 1.0));  
+  //phaseSpace.emplace_back(new truth::q0RangeLimit<CVUniverse>(0.0, .7));
+
   PlotUtils::Cutter<CVUniverse, MichelEvent> mycuts(std::move(preCuts), std::move(sidebands) , std::move(signalDefinition),std::move(phaseSpace));
 
   std::vector<std::unique_ptr<PlotUtils::Reweighter<CVUniverse, MichelEvent>>> MnvTunev1;

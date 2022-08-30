@@ -20,10 +20,9 @@ class hasMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
       evt.m_allmichels.clear();
       int nmichels = univ.GetNMichels();
       if (nmichels == 0) return false;
-      evt.m_bestdist = 9999.; // setting some default value for best distance
       for (int i = 0; i < nmichels; ++i)
       {
-        Michel current_michel = Michel(univ, i);
+        Michel current_michel(univ, i);
         if (current_michel.is_fitted != 1) continue;
 	//double vtxtime = univ.GetVertex().T()/pow(10, 3); //mus
 	//double micheltime = current_michel.time; //already in mus
@@ -33,7 +32,7 @@ class hasMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
         //if (current_michel.true_parentpdg == 211) evt.m_ntruepiparents.push_back(current_michel);  
         //evt.m_nmichels.push_back(current_michel);
         evt.m_allmichels.push_back(current_michel);       
-	
+           	
         
        }
         //Filling Event Level Info needed for 2D selection 
@@ -41,7 +40,7 @@ class hasMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
         evt.lowTpi = lowtpiinevent;     
         evt.pT_reco = univ.GetMuonPT();
 	evt.q3_reco = univ.Getq3();
-	evt.eavail_reco = univ.GetEavail();
+	evt.eavail_reco = univ.NewEavail();
         return !evt.m_allmichels.empty();
     }
 

@@ -1,7 +1,7 @@
-#define MC_OUT_FILE_NAME "runEventLoopMC_July292022_EavailComp_pTbin6_noreweight.root"
-#define DATA_OUT_FILE_NAME "runEventLoopData_July292022_EavailComp_pTbin6_noreweight.root"
-#define MC_SIDE_FILE_NAME "runEventLoopMC_July292022_Sideband_pTbin6_noreweight.root"
-#define DATA_SIDE_FILE_NAME "runEventLoopDATA_July292022_Sideband_pTbin6_noreweight.root"
+#define MC_OUT_FILE_NAME "runEventLoopMC_Aug292022_EavailComp_pTbin6_reweight.root"
+#define DATA_OUT_FILE_NAME "runEventLoopData_Aug292022_EavailComp_pTbin6_reweight.root"
+#define MC_SIDE_FILE_NAME "runEventLoopMC_Aug292022_Sideband_pTbin6_reweight.root"
+#define DATA_SIDE_FILE_NAME "runEventLoopDATA_Aug292022_Sideband_pTbin6_reweight.root"
 
 
 #define USAGE \
@@ -78,6 +78,7 @@ enum ErrorCodes
 #include "cuts/PTRangeReco.h"
 #include "cuts/GetClosestMichel.h"
 #include "cuts/Distance2DSideband.h"
+#include "cuts/RecoilERange.h"
 #include "event/SetDistanceMichelSideband.h"
 #include "event/SetDistanceMichelSelection.h"
 #include "event/GetClosestMichel.h"
@@ -531,13 +532,8 @@ int main(const int argc, const char** argv)
   preCuts.emplace_back(new reco::IsNeutrino<CVUniverse, MichelEvent>());
   //preCuts.emplace_back(new Q3RangeReco<CVUniverse, MichelEvent>(0.0,1.2));
   preCuts.emplace_back(new PTRangeReco<CVUniverse, MichelEvent>(0.0,1.0));
-
-  //preCuts.emplace_back(new hasMichel<CVUniverse, MichelEvent>());
-  //preCuts.emplace_back(new BestMichelDistance2D<CVUniverse, MichelEvent>(100.));
-  //preCuts.emplace_back(new VtxMatchFirst<CVUniverse, MichelEvent>(200., 102.));
-  //preCuts.emplace_back(new NPiCut<CVUniverse, MichelEvent>(1));
+  preCuts.emplace_back(new RecoilERange<CVUniverse, MichelEvent>(0.0,1.5));
   preCuts.emplace_back(new hasMichel<CVUniverse, MichelEvent>());
-  //preCuts.emplace_back(new Distance2DSideband<CVUniverse, MichelEvent>(500.));
   
   preCuts.emplace_back(new BestMichelDistance2D<CVUniverse, MichelEvent>(150.));
   preCuts.emplace_back(new GetClosestMichel<CVUniverse, MichelEvent>(0));
@@ -556,7 +552,9 @@ int main(const int argc, const char** argv)
   phaseSpace.emplace_back(new truth::Apothem<CVUniverse>(apothem));
   phaseSpace.emplace_back(new truth::MuonAngle<CVUniverse>(20.));
   phaseSpace.emplace_back(new truth::PZMuMin<CVUniverse>(1500.));
-  phaseSpace.emplace_back(new truth::pTRangeLimit<CVUniverse>(0., 1.0));                                                                                                                                                 
+  phaseSpace.emplace_back(new truth::pTRangeLimit<CVUniverse>(0., 1.0));
+  //phaseSpace.emplace_back(new truth::q0RangeLimit<CVUniverse>(0.0, .7));
+
   PlotUtils::Cutter<CVUniverse, MichelEvent> mycuts(std::move(preCuts), std::move(sidebands) , std::move(signalDefinition),std::move(phaseSpace));
 
   std::vector<std::unique_ptr<PlotUtils::Reweighter<CVUniverse, MichelEvent>>> MnvTunev1;
@@ -566,7 +564,8 @@ int main(const int argc, const char** argv)
   MnvTunev1.emplace_back(new PlotUtils::MINOSEfficiencyReweighter<CVUniverse, MichelEvent>());
   MnvTunev1.emplace_back(new PlotUtils::RPAReweighter<CVUniverse, MichelEvent>());
   //TODO: Add my pion reweighter here. - Mehreen S.  Nov 22, 2021
-  //MnvTunev1.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>()); 
+  MnvTunev1.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>()); 
+  //
   PlotUtils::Model<CVUniverse, MichelEvent> model(std::move(MnvTunev1));
 
   // Make a map of systematic universes
@@ -630,11 +629,11 @@ int main(const int argc, const char** argv)
  vars2D.push_back(new Variable2D(*vars[6], *vars[10])); //Eavailbins(y) vs Eavail
  vars2D.push_back(new Variable2D(*vars[8], *vars[12])); //Eavailq0bins(y) vs Eavail
  vars2D.push_back(new Variable2D(*vars[7], *vars[11])); //RecoilEq0bins(y) vs RecoilE
- vars2D.push_back(new Variable2D(*vars[6], *vars[13])); //q3bins(y) vs Eavail
- vars2D.push_back(new Variable2D(*vars[7], *vars[13])); //q3bins(y) vs RecoilE
- vars2D.push_back(new Variable2D(*vars[0], *vars[13])); //q3bins(y) vs pTmu
- vars2D.push_back(new Variable2D(*vars[3], *vars[13])); //q3bins(y) vs pz
- vars2D.push_back(new Variable2D(*vars[2], *vars[13])); //q3bins(y) vs q2
+ //vars2D.push_back(new Variable2D(*vars[6], *vars[13])); //q3bins(y) vs Eavail
+ //vars2D.push_back(new Variable2D(*vars[7], *vars[13])); //q3bins(y) vs RecoilE
+ //vars2D.push_back(new Variable2D(*vars[0], *vars[13])); //q3bins(y) vs pTmu
+ //vars2D.push_back(new Variable2D(*vars[3], *vars[13])); //q3bins(y) vs pz
+ //vars2D.push_back(new Variable2D(*vars[2], *vars[13])); //q3bins(y) vs q2
 
  std::vector<Variable*> sidevars = vars; 
 
