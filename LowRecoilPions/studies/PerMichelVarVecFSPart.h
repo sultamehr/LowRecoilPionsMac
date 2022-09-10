@@ -35,7 +35,7 @@ class PerMichelVarVecFSPart: public Study
                                                  {2, "RES"},
                                                  {4, "COH"},
                                                  {3, "DIS"}}; //other category is built in for free.
-	m_VarToGENIELabel = new util::Categorized<HIST, int>(("GENIE_"+varName).c_str(), varName + "_" + varUnits, GENIELabels, nbins, binvec ,univs);
+      //	m_VarToGENIELabel = new util::Categorized<HIST, int>(("GENIE_"+varName).c_str(), varName + "_" + varUnits, GENIELabels, nbins, binvec ,univs);
            
     }
     
@@ -50,11 +50,11 @@ class PerMichelVarVecFSPart: public Study
 						    Hist.hist->Write();
 						});
 
-       m_VarToGENIELabel->visit([](HIST& wrapper)
-                                {
-                                  wrapper.SyncCVHistos();
-                                  wrapper.hist->Write();
-                                });
+       //m_VarToGENIELabel->visit([](HIST& wrapper)
+       //                         {
+       //                           wrapper.SyncCVHistos();
+       //                           wrapper.hist->Write();
+       //                         });
        
        std::cout << "Drawing the DATA Histogram" << std::endl;
        dataHist->SyncCVHistos();
@@ -79,14 +79,14 @@ class PerMichelVarVecFSPart: public Study
     HW* totalMCHist;
     //HW* truthHist;
     util::Categorized<HIST, FSCategory*> fSignalByPionsInVar;
-    util::Categorized<HIST, int>* m_VarToGENIELabel;
+   // util::Categorized<HIST, int>* m_VarToGENIELabel;
 
     //Overriding base class functions
     //Do nothing for now...  Good place for data comparisons in the future. 
     void fillSelected(const CVUniverse& univ, const MichelEvent& evt, const double weight) {
       for(size_t whichMichel = 0; whichMichel < evt.m_nmichels.size(); ++whichMichel)
       {
-         (*dataHist).FillUniverse(&univ, fReco(univ, evt, whichMichel), 1.0);
+         (*dataHist).FillUniverse(&univ, fReco(univ, evt, whichMichel), weight);
       }
     }
 
@@ -96,7 +96,7 @@ class PerMichelVarVecFSPart: public Study
       for(size_t whichMichel = 0; whichMichel < evt.m_nmichels.size(); ++whichMichel)
       {
         (*totalMCHist).FillUniverse(&univ, fReco(univ, evt, whichMichel), weight);
-        (*m_VarToGENIELabel)[univ.GetInteractionType()].FillUniverse(&univ, fReco(univ, evt, whichMichel), weight);    
+     //   (*m_VarToGENIELabel)[univ.GetInteractionType()].FillUniverse(&univ, fReco(univ, evt, whichMichel), weight);    
         const auto pionCat = std::find_if(pionFSCategories.begin(), pionFSCategories.end(), [&univ](auto& category) { return (*category)(univ); });
         fSignalByPionsInVar[*pionCat].FillUniverse(&univ, fReco(univ,evt,whichMichel), weight);
       }

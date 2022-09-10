@@ -79,6 +79,7 @@ enum ErrorCodes
 #include "cuts/GetClosestMichel.h"
 #include "cuts/Distance2DSideband.h"
 #include "cuts/RecoilERange.h"
+#include "cuts/PmuCut.h"
 #include "event/SetDistanceMichelSideband.h"
 #include "event/SetDistanceMichelSelection.h"
 #include "event/GetClosestMichel.h"
@@ -161,7 +162,7 @@ void LoopAndFillEventSelection(
 	if (!cutResults.all()) continue;
         if (cutResults.all()){
 	    //setDistanceMichelSelection(*universe, myevent, 150.);
-            setClosestMichel(*universe, myevent,0);
+            //setClosestMichel(*universe, myevent,0);
   	    //if (!myevent.m_nmichelspass.empty()){
 
             for(auto& study: studies) study->SelectedSignal(*universe, myevent, weight2);
@@ -202,7 +203,7 @@ void LoopAndFillData( PlotUtils::ChainWrapper* data,
     //for (auto universe : data_band) {
       const auto universe = data_band.front();
       universe->SetEntry(i);
-      if(i%1000==0) std::cout << i << " / " << nEntries << "\r" << std::flush;
+     // if(i%1000==0) std::cout << i << " / " << nEntries << "\r" << std::flush;
       //std::cout << "Creating Michel Event" << std::endl;
       //if (universe->ShortName() != "cv") continue;
       MichelEvent myevent; 
@@ -211,7 +212,7 @@ void LoopAndFillData( PlotUtils::ChainWrapper* data,
       if (!cutResults.all()) continue;
       if (cutResults.all()){
       	//setDistanceMichelSelection(*universe, myevent, 150.);
-        setClosestMichel(*universe, myevent,0);
+        //setClosestMichel(*universe, myevent,0);
         //if (!myevent.m_nmichelspass.empty() and myevent.selection ==1){
       		//std::cout << "Filling Data STudies" << std::endl;
       	 for(auto& study: studies) study->Selected(*universe, myevent, 1); 
@@ -405,7 +406,7 @@ int main(const int argc, const char** argv)
   //preCuts.emplace_back(new Q3RangeReco<CVUniverse, MichelEvent>(0.0,1.2));
   preCuts.emplace_back(new PTRangeReco<CVUniverse, MichelEvent>(0.0,1.0));
   preCuts.emplace_back(new RecoilERange<CVUniverse, MichelEvent>(0.0,1.5));
-
+  preCuts.emplace_back(new PmuCut<CVUniverse, MichelEvent>(1.5));
   preCuts.emplace_back(new hasMichel<CVUniverse, MichelEvent>());
   //preCuts.emplace_back(new Distance2DSideband<CVUniverse, MichelEvent>(500.));
   
@@ -413,8 +414,8 @@ int main(const int argc, const char** argv)
   preCuts.emplace_back(new GetClosestMichel<CVUniverse, MichelEvent>(0));
 
 
-  TFile* mc_MichelStudies = TFile::Open("Aug172022_EavailComp_noreweight_pTbin6_MC.root", "RECREATE");
-  TFile* data_MichelStudies = TFile::Open("Aug172022_EavailComp_noreweight_pTbin6_data.root", "RECREATE");
+  TFile* mc_MichelStudies = TFile::Open("Sep052022_Pmucut_noreweight_pTbin6_MC.root", "RECREATE");
+  TFile* data_MichelStudies = TFile::Open("Sep052022_Pmucut_noreweight_pTbin6_data.root", "RECREATE");
 
   signalDefinition.emplace_back(new truth::IsNeutrino<CVUniverse>());
   signalDefinition.emplace_back(new truth::IsCC<CVUniverse>());
@@ -428,7 +429,8 @@ int main(const int argc, const char** argv)
   phaseSpace.emplace_back(new truth::Apothem<CVUniverse>(apothem));
   phaseSpace.emplace_back(new truth::MuonAngle<CVUniverse>(20.));
   phaseSpace.emplace_back(new truth::PZMuMin<CVUniverse>(1500.));
-  phaseSpace.emplace_back(new truth::pTRangeLimit<CVUniverse>(0., 1.0));  
+  phaseSpace.emplace_back(new truth::pTRangeLimit<CVUniverse>(0., 1.0));
+  phaseSpace.emplace_back(new truth::pMuCut<CVUniverse>(1.5));  
   //phaseSpace.emplace_back(new truth::q0RangeLimit<CVUniverse>(0.0, .7));
 
   PlotUtils::Cutter<CVUniverse, MichelEvent> mycuts(std::move(preCuts), std::move(sidebands) , std::move(signalDefinition),std::move(phaseSpace));
@@ -1160,7 +1162,10 @@ std::function<double(const CVUniverse&, const MichelEvent&)> lowesttpi = [](cons
     //"ALL2DDistprinted_OnlyPionMichels_tpimorethan80meV_forceendpointmatch_2Ddistcut_mc.root", "RECREATE");
     for(auto& study: studies) study->SaveOrDraw(*mc_MichelStudies);
     std::cout << "WRiting STUDIES to michel level file" << std::endl;
-   
+    std::cout << "Printing POT MC " << std::endl;
+    auto mcPOT = new TParameter<double>("POTUsed", options.m_mc_pot);
+    mc_MichelStudies->cd();
+    mcPOT->Write(); 
     //for(auto& study: sideband_studies) study->SaveOrDraw(*mc_SidebandStudies);
 
 
@@ -1173,13 +1178,7 @@ std::function<double(const CVUniverse&, const MichelEvent&)> lowesttpi = [](cons
     //for(auto& study: data_sidebands) study->SaveOrDraw(*data_SidebandStudies);
 
 
-    //Protons On Target
    
-    std::cout << "Printing POT MC " << std::endl;
-    auto mcPOT = new TParameter<double>("POTUsed", options.m_mc_pot);
-    mcPOT->Write();
-    mc_MichelStudies->cd();
-    mcPOT->Write();
     
     //mc_SidebandStudies->cd();
     //mcPOT->Write();
@@ -1190,7 +1189,7 @@ std::function<double(const CVUniverse&, const MichelEvent&)> lowesttpi = [](cons
     std::cout << "Looping over Vars to fill systematics" << std::endl;
 
     auto dataPOT = new TParameter<double>("POTUsed", options.m_data_pot);
-    dataPOT->Write();
+    //dataPOT->Write();
     data_MichelStudies->cd();
     dataPOT->Write();
     //data_SidebandStudies->cd();

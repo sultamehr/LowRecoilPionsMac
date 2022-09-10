@@ -28,9 +28,16 @@ class hasMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
 	//double micheltime = current_michel.time; //already in mus
         //double timediff = micheltime - vtxtime; //if negative, michel happened before vertex. 
         //if (timediff > -.100) continue;
- 	if (current_michel.vtx_michel_timediff < 0.400) continue; // < 0.400 is to reject dead michels that happen during dead time. >-0.250 is to see what matches look like for michels that happen before neutrino event. 
+ 	if (abs(current_michel.vtx_michel_timediff) < 0.400) continue; // < 0.400 is to reject dead michels that happen during dead time. >-0.250 is to see what matches look like for michels that happen before neutrino event. 
         //if (current_michel.true_parentpdg == 211) evt.m_ntruepiparents.push_back(current_michel);  
         //evt.m_nmichels.push_back(current_michel);
+        //Make sure the Michel Z is in tracker or ECAL region
+
+	double z1 = current_michel.m_z1;
+	double z2 = current_michel.m_z2;
+	
+	if (z1 < 5980 || z2 < 5980) continue; 
+
         evt.m_allmichels.push_back(current_michel);       
            	
         

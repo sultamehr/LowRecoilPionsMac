@@ -79,6 +79,7 @@ enum ErrorCodes
 #include "cuts/GetClosestMichel.h"
 #include "cuts/Distance2DSideband.h"
 #include "cuts/RecoilERange.h"
+#include "cuts/PmuCut.h"
 #include "event/SetDistanceMichelSideband.h"
 #include "event/SetDistanceMichelSelection.h"
 #include "event/GetClosestMichel.h"
@@ -406,6 +407,7 @@ int main(const int argc, const char** argv)
   //preCuts.emplace_back(new Q3RangeReco<CVUniverse, MichelEvent>(0.0,1.2));
   preCuts.emplace_back(new PTRangeReco<CVUniverse, MichelEvent>(0.0,1.0));
   preCuts.emplace_back(new RecoilERange<CVUniverse, MichelEvent>(0.0, 1.5));
+  preCuts.emplace_back(new PmuCut<CVUniverse, MichelEvent>(1.5));
   preCuts.emplace_back(new hasMichel<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new RemoveSignalEvents<CVUniverse, MichelEvent>(150.));
   preCuts.emplace_back(new Distance2DSideband<CVUniverse, MichelEvent>(1000.)); 
@@ -416,8 +418,8 @@ int main(const int argc, const char** argv)
 
  // TFile* mc_MichelStudies = TFile::Open("July282022_EavailComp_noreweight_pTbin6_MC.root", "RECREATE");
  // TFile* data_MichelStudies = TFile::Open("July282022_EavailComp_noreweight_pTbin6_data.root", "RECREATE");
-  TFile* mc_SidebandStudies = TFile::Open("Aug242022_Sideband_noreweight_pTbin6_MC.root", "RECREATE");
-  TFile* data_SidebandStudies = TFile::Open("Aug242022_Sideband_noreweight_pTbin6_data.root", "RECREATE");
+  TFile* mc_SidebandStudies = TFile::Open("Aug242022_Sideband_reweight_pmucut_MC.root", "RECREATE");
+  TFile* data_SidebandStudies = TFile::Open("Aug242022_Sideband_reweight_pmucut_data.root", "RECREATE");
 
   signalDefinition.emplace_back(new truth::IsNeutrino<CVUniverse>());
   signalDefinition.emplace_back(new truth::IsCC<CVUniverse>());
@@ -433,7 +435,7 @@ int main(const int argc, const char** argv)
   phaseSpace.emplace_back(new truth::PZMuMin<CVUniverse>(1500.));
   phaseSpace.emplace_back(new truth::pTRangeLimit<CVUniverse>(0., 1.0));
   //phaseSpace.emplace_back(new truth::q0RangeLimit<CVUniverse>(0.0, .7));  
-  
+  phaseSpace.emplace_back(new truth::pMuCut<CVUniverse>(1.5)); 
   PlotUtils::Cutter<CVUniverse, MichelEvent> mycuts(std::move(preCuts), std::move(sidebands) , std::move(signalDefinition),std::move(phaseSpace));
 
   std::vector<std::unique_ptr<PlotUtils::Reweighter<CVUniverse, MichelEvent>>> MnvTunev1;
@@ -443,7 +445,7 @@ int main(const int argc, const char** argv)
   MnvTunev1.emplace_back(new PlotUtils::MINOSEfficiencyReweighter<CVUniverse, MichelEvent>());
   MnvTunev1.emplace_back(new PlotUtils::RPAReweighter<CVUniverse, MichelEvent>());
   //TODO: Add my pion reweighter here. - Mehreen S.  Nov 22, 2021
-  //MnvTunev1.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>()); 
+  MnvTunev1.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>()); 
   PlotUtils::Model<CVUniverse, MichelEvent> model(std::move(MnvTunev1));
 
   // Make a map of systematic universes
@@ -1163,7 +1165,11 @@ std::function<double(const CVUniverse&, const MichelEvent&)> lowesttpi = [](cons
     std::cout << "WRiting STUDIES to michel level file" << std::endl;
    
     for(auto& study: studies) study->SaveOrDraw(*mc_SidebandStudies);
-
+    std::cout << "Printing POT MC " << std::endl;
+    auto mcPOT = new TParameter<double>("POTUsed", options.m_mc_pot);
+    mc_SidebandStudies->cd();
+    mcPOT->Write();
+    mc_SidebandStudies->cd();
 
     //CVUniverse::SetTruth(false);
     //LoopAndFillData(options.m_data, data_band, vars, vars2D, data_studies,sidevars, sidevars2D, data_sidebands, mycuts);
@@ -1176,26 +1182,18 @@ std::function<double(const CVUniverse&, const MichelEvent&)> lowesttpi = [](cons
 
     //Protons On Target
    
-    std::cout << "Printing POT MC " << std::endl;
-    auto mcPOT = new TParameter<double>("POTUsed", options.m_mc_pot);
-    mcPOT->Write();
-    //mc_MichelStudies->cd();
-   // mcPOT->Write();
     
-    mc_SidebandStudies->cd();
-    mcPOT->Write();
-    
-
     PlotUtils::TargetUtils targetInfo;
     assert(error_bands["cv"].size() == 1 && "List of error bands must contain a universe named \"cv\" for the flux integral.");
     std::cout << "Looping over Vars to fill systematics" << std::endl;
 
     auto dataPOT = new TParameter<double>("POTUsed", options.m_data_pot);
-    dataPOT->Write();
+   // dataPOT->Write();
    // data_MichelStudies->cd();
    // dataPOT->Write();
     data_SidebandStudies->cd();
     dataPOT->Write();
+    data_SidebandStudies->cd();
     std::cout << "Success" << std::endl;
   }
   catch(const ROOT::exception& e)

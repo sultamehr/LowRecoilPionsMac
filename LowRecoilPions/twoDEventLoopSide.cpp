@@ -1,7 +1,7 @@
 #define MC_OUT_FILE_NAME "runEventLoopMC_Aug292022_1000mm_pTbin6_noreweight.root"
 #define DATA_OUT_FILE_NAME "runEventLoopData_Aug292022_1000mm_pTbin6_noreweight.root"
-#define MC_SIDE_FILE_NAME "runEventLoopMC_Aug292022_Sideband1000_pTbin6_noreweight.root"
-#define DATA_SIDE_FILE_NAME "runEventLoopDATA_Aug292022_Sideband1000_pTbin6_noreweight.root"
+#define MC_SIDE_FILE_NAME "runEventLoopMC_Sep022022_Sideband1000_pMu1_5_reweight.root"
+#define DATA_SIDE_FILE_NAME "runEventLoopDATA_Sep022022_Sideband1000_pMu1_5_reweight.root"
 
 
 #define USAGE \
@@ -80,6 +80,7 @@ enum ErrorCodes
 #include "cuts/GetClosestMichel.h"
 #include "cuts/Distance2DSideband.h"
 #include "cuts/RecoilERange.h"
+#include "cuts/PmuCut.h"
 #include "event/SetDistanceMichelSideband.h"
 #include "event/SetDistanceMichelSelection.h"
 #include "event/GetClosestMichel.h"
@@ -535,6 +536,7 @@ int main(const int argc, const char** argv)
   //preCuts.emplace_back(new Q3RangeReco<CVUniverse, MichelEvent>(0.0,1.2));
   preCuts.emplace_back(new PTRangeReco<CVUniverse, MichelEvent>(0.0,1.0));
   preCuts.emplace_back(new RecoilERange<CVUniverse, MichelEvent>(0.0,1.5));
+  preCuts.emplace_back(new PmuCut<CVUniverse, MichelEvent>(1.5));
   preCuts.emplace_back(new hasMichel<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new RemoveSignalEvents<CVUniverse, MichelEvent>(150.)); 
   preCuts.emplace_back(new Distance2DSideband<CVUniverse, MichelEvent>(1000.));
@@ -549,7 +551,8 @@ int main(const int argc, const char** argv)
   signalDefinition.emplace_back(new truth::HasPion<CVUniverse>());
   //signalDefinition.emplace_back(new Q3Limit<CVUniverse>(0.0, 1.20));
   signalDefinition.emplace_back(new truth::ZRange<CVUniverse>("Tracker", minZ, maxZ));
-  signalDefinition.emplace_back(new truth::Apothem<CVUniverse>(apothem)); 
+  signalDefinition.emplace_back(new truth::Apothem<CVUniverse>(apothem));
+ 
   //signalDefinition.emplace_back(new hasTruePion<CVUniverse>());                                                                                                              
   
   phaseSpace.emplace_back(new truth::ZRange<CVUniverse>("Tracker", minZ, maxZ));
@@ -557,6 +560,7 @@ int main(const int argc, const char** argv)
   phaseSpace.emplace_back(new truth::MuonAngle<CVUniverse>(20.));
   phaseSpace.emplace_back(new truth::PZMuMin<CVUniverse>(1500.));
   phaseSpace.emplace_back(new truth::pTRangeLimit<CVUniverse>(0., 1.0));
+  phaseSpace.emplace_back(new truth::pMuCut<CVUniverse>(1.5));
   //phaseSpace.emplace_back(new truth::q0RangeLimit<CVUniverse>(0.0, .7));
 
   PlotUtils::Cutter<CVUniverse, MichelEvent> mycuts(std::move(preCuts), std::move(sidebands) , std::move(signalDefinition),std::move(phaseSpace));
@@ -568,7 +572,7 @@ int main(const int argc, const char** argv)
   MnvTunev1.emplace_back(new PlotUtils::MINOSEfficiencyReweighter<CVUniverse, MichelEvent>());
   MnvTunev1.emplace_back(new PlotUtils::RPAReweighter<CVUniverse, MichelEvent>());
   //TODO: Add my pion reweighter here. - Mehreen S.  Nov 22, 2021
-  //MnvTunev1.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>()); 
+  MnvTunev1.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>()); 
   PlotUtils::Model<CVUniverse, MichelEvent> model(std::move(MnvTunev1));
 
   // Make a map of systematic universes
@@ -594,6 +598,7 @@ int main(const int argc, const char** argv)
                       dansPzBins = {1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 15, 20, 40, 60},
                       robsEmuBins = {0,1,2,3,4,5,7,9,12,15,18,22,36,50,75,80},
                       mehreenQ3Bins = {0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4},
+		      mehreenpmubins = {0.0, 0.5, 1.0, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 15, 20, 40, 60},
 		      robsRecoilBins;
   
    
@@ -620,7 +625,8 @@ int main(const int argc, const char** argv)
     new Variable("NewEAvailbins", "NewEAvaily", recoilbins, &CVUniverse::NewEavail, &CVUniverse::GetTrueEAvail),//10
     new Variable("NewRecoilEbins", "NewRecoilEy", recoilbins, &CVUniverse::NewRecoilE, &CVUniverse::GetTrueQ0),//11
     new Variable("NewEAvailvq0bins", "NewEavailvq0y", recoilbins, &CVUniverse::NewEavail,&CVUniverse::GetTrueQ0),//12
-    new Variable("q3bins", "q3y", mehreenQ3Bins,&CVUniverse::Getq3, &CVUniverse::GetTrueQ3) //13
+    new Variable("q3bins", "q3y", mehreenQ3Bins,&CVUniverse::Getq3, &CVUniverse::GetTrueQ3), //13
+    new Variable("Pmu", "pmu", mehreenpmubins, &CVUniverse::GetMuonP, &CVUniverse::GetPmuTrue)
  };
 
  std::vector<Variable2D*> vars2D;

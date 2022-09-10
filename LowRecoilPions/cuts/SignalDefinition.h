@@ -72,6 +72,23 @@ class pTRangeLimit: public PlotUtils::SignalConstraint<UNIVERSE>
     }
 };
 
+template <class UNIVERSE>
+class pMuCut: public PlotUtils::SignalConstraint<UNIVERSE>
+{
+  public:
+    pMuCut(const double pMin): PlotUtils::SignalConstraint<UNIVERSE>("True pmu > " + std::to_string(pMin) + " GeV"),
+  fpMin(pMin)
+    {
+    }
+
+  private:
+    double fpMin; // Min pmu allowed in GeV/c
+    bool checkConstraint(const UNIVERSE& univ) const //override
+    {
+      double truep = univ.GetPmuTrue();
+      return (truep > fpMin);
+    }
+};
 
 template <class UNIVERSE>
 class q0RangeLimit: public PlotUtils::SignalConstraint<UNIVERSE>

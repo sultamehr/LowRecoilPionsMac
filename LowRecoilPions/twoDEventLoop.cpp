@@ -1,7 +1,7 @@
-#define MC_OUT_FILE_NAME "runEventLoopMC_Aug292022_EavailComp_pTbin6_reweight.root"
-#define DATA_OUT_FILE_NAME "runEventLoopData_Aug292022_EavailComp_pTbin6_reweight.root"
-#define MC_SIDE_FILE_NAME "runEventLoopMC_Aug292022_Sideband_pTbin6_reweight.root"
-#define DATA_SIDE_FILE_NAME "runEventLoopDATA_Aug292022_Sideband_pTbin6_reweight.root"
+#define MC_OUT_FILE_NAME "runEventLoopMC_Sep022022_pmu_reweight.root"
+#define DATA_OUT_FILE_NAME "runEventLoopData_Sep022022_pmu_reweight.root"
+#define MC_SIDE_FILE_NAME "runEventLoopMC_Aug312022_Sideband_nopmu_noreweight.root"
+#define DATA_SIDE_FILE_NAME "runEventLoopDATA_Aug312022_Sideband_nopmu_noreweight.root"
 
 
 #define USAGE \
@@ -79,6 +79,7 @@ enum ErrorCodes
 #include "cuts/GetClosestMichel.h"
 #include "cuts/Distance2DSideband.h"
 #include "cuts/RecoilERange.h"
+#include "cuts/PmuCut.h"
 #include "event/SetDistanceMichelSideband.h"
 #include "event/SetDistanceMichelSelection.h"
 #include "event/GetClosestMichel.h"
@@ -533,6 +534,7 @@ int main(const int argc, const char** argv)
   //preCuts.emplace_back(new Q3RangeReco<CVUniverse, MichelEvent>(0.0,1.2));
   preCuts.emplace_back(new PTRangeReco<CVUniverse, MichelEvent>(0.0,1.0));
   preCuts.emplace_back(new RecoilERange<CVUniverse, MichelEvent>(0.0,1.5));
+  preCuts.emplace_back(new PmuCut<CVUniverse, MichelEvent>(1.5));
   preCuts.emplace_back(new hasMichel<CVUniverse, MichelEvent>());
   
   preCuts.emplace_back(new BestMichelDistance2D<CVUniverse, MichelEvent>(150.));
@@ -553,6 +555,7 @@ int main(const int argc, const char** argv)
   phaseSpace.emplace_back(new truth::MuonAngle<CVUniverse>(20.));
   phaseSpace.emplace_back(new truth::PZMuMin<CVUniverse>(1500.));
   phaseSpace.emplace_back(new truth::pTRangeLimit<CVUniverse>(0., 1.0));
+  phaseSpace.emplace_back(new truth::pMuCut<CVUniverse>(1.5));
   //phaseSpace.emplace_back(new truth::q0RangeLimit<CVUniverse>(0.0, .7));
 
   PlotUtils::Cutter<CVUniverse, MichelEvent> mycuts(std::move(preCuts), std::move(sidebands) , std::move(signalDefinition),std::move(phaseSpace));
@@ -591,9 +594,10 @@ int main(const int argc, const char** argv)
                       dansPzBins = {1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 15, 20, 40, 60},
                       robsEmuBins = {0,1,2,3,4,5,7,9,12,15,18,22,36,50,75,80},
                       mehreenQ3Bins = {0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4},
-		      robsRecoilBins;
+		      mehreenpmubins = {0.0, 0.5, 1.0, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 15, 20, 40, 60}, 
+		     robsRecoilBins;
   
-   
+  			 
   int nq3mbins = mehreenQ3Bins.size() -1; 
   std::vector<double> tpibins = {0, 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 46., 52.,60., 70., 80., 100., 125.,150., 175., 200., 225., 250., 275., 300., 325., 350., 400., 500., 1000.};   
   std::vector<double> rangebins = {0, 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 44., 50., 56., 62., 70., 80.,90., 100., 110.,  120., 140., 160., 180., 200., 220., 240., 260., 280., 300., 325., 350., 375., 400., 450., 500., 550., 600., 650., 700., 800., 900., 1000., 1200., 1400., 1800., 2400.};             
@@ -617,7 +621,9 @@ int main(const int argc, const char** argv)
     new Variable("NewEAvailbins", "NewEAvaily", recoilbins, &CVUniverse::NewEavail, &CVUniverse::GetTrueEAvail),//10
     new Variable("NewRecoilEbins", "NewRecoilEy", recoilbins, &CVUniverse::NewRecoilE, &CVUniverse::GetTrueQ0),//11
     new Variable("NewEAvailvq0bins", "NewEavailvq0y", recoilbins, &CVUniverse::NewEavail,&CVUniverse::GetTrueQ0),//12
-    new Variable("q3bins", "q3y", mehreenQ3Bins,&CVUniverse::Getq3, &CVUniverse::GetTrueQ3) //13
+    new Variable("q3bins", "q3y", mehreenQ3Bins,&CVUniverse::Getq3, &CVUniverse::GetTrueQ3), //13
+    new Variable("Pmu", "pmu", mehreenpmubins, &CVUniverse::GetMuonP, &CVUniverse::GetPmuTrue),
+    new Variable("LowTpi", "LowTpi", recoilbins, &CVUniverse::GetTrueLowestTpiEvent, &CVUniverse::GetTrueLowestTpiEvent)
  };
 
  std::vector<Variable2D*> vars2D;
@@ -664,9 +670,9 @@ int main(const int argc, const char** argv)
     std::cout << "MC cut summary:\n" << mycuts << "\n";
     //mycuts.resetStats();
     CVUniverse::SetTruth(true);
-    //LoopAndFillEffDenom(options.m_truth, truth_bands, vars, vars2D,studies, mycuts, model);
+    LoopAndFillEffDenom(options.m_truth, truth_bands, vars, vars2D, mycuts, model);
     //options.PrintMacroConfiguration(argv[0]);
-    //std::cout << "Sideband Cut Summary:\n" << mysides << "\n";
+    //std::cout << "Sideband Cut Summary:\n" << mycuts << "\n";
     mycuts.resetStats();
     CVUniverse::SetTruth(false);
     LoopAndFillData(options.m_data, data_band, vars, vars2D, sidevars, sidevars2D, mycuts);

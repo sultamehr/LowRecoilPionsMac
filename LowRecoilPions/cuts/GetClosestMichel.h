@@ -51,8 +51,10 @@ class GetClosestMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
         double dist = evt.m_nmichels[i].Best3Ddist; 
 	if (evt.m_nmichels[i].OrderOfMichel == 1) {
            //closestMichel.push_back(evt.m_nmichels[i]);
+	   if (dist > 2500.) return false;
 	   evt.m_bestdist = dist;
-           evt.m_idx = i;
+	              
+	   evt.m_idx = i;
            if (evt.m_nmichels[i].overlay_fraction > 0.5) evt.ClosestMichelsIsOverlay = 1;      
            evt.m_best_XZ = evt.m_nmichels[i].best_XZ;
            evt.m_best_UZ = evt.m_nmichels[i].best_UZ;
@@ -80,7 +82,9 @@ class GetClosestMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
 	 }
         
        }
-       double lowtpiinevent = univ.GetTrueTpi();
+       if (closestMichel.empty()) return false;
+       double lowtpiinevent = closestMichel[0].pionKE;
+       //std::cout << "Closest Michel Pion KE is " << lowtpiinevent << std::endl;
        evt.lowTpi = lowtpiinevent;
        evt.pT_reco = univ.GetMuonPT();
        evt.q3_reco = univ.Getq3();
@@ -89,11 +93,11 @@ class GetClosestMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
        evt.m_nmichels = closestMichel;
        if (univ.GetMuonPT() < .20 and univ.NewEavail() < 50. and !evt.m_nmichels.empty())
        {
-	     univ.PrintTrueArachneLink();
-	     univ.PrintDataArachneLink();
-	     std::cout << "Best Michel at time: " << evt.m_nmichels[0].time << " range: " << evt.m_nmichels[0].Best3Ddist << " energy: " << evt.m_nmichels[0].energy << std::endl;
-	     		
-	
+	     double vtx_t = univ.GetVertex().T()/pow(10, 3); //mus
+	     
+	    // univ.PrintTrueArachneLink();
+	   //  univ.PrintDataArachneLink();
+	   //  std::cout << "Available Energy: " << univ.NewEavail() << " Muon pT Reco: " << univ.GetMuonPT()  << " Primary Vtx time: " << vtx_t << " Best Michel at time: " << evt.m_nmichels[0].time << " range: " << evt.m_nmichels[0].Best3Ddist << " energy: " << evt.m_nmichels[0].energy << " Matched to : " <<  evt.m_nmichels[0].BestMatch << std::endl;
           
        }
        return true;       

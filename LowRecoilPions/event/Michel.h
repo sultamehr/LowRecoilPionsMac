@@ -561,7 +561,7 @@ void Michel::DoesMichelMatchClus(const CVUniverse& univ){
     
     if (timediff < 0.) continue;
     //if (zpos < minZ || zpos > maxZ) continue; //Require the matched clusters also be in tracker  TODO: July 20, 2022 - Change if Kevin says this doesnt make sense 
- 
+    if (zpos <  5980) continue; 
     //std::cout << "printing cluster info " << "energy " << energy << " time " << time << " pos " << pos << " zpos " << zpos << std::endl;
 
     double zdiff1 = abs(zpos - michelz1);

@@ -92,7 +92,16 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   {
     return GetPmu()/1000. * cos(GetThetamu());
   }
-  
+
+  double GetMuonP() const
+  {
+	return GetPmu()/1000.; //GeV/c
+  }
+  double GetPmuTrue() const
+  {
+	return GetPlepTrue()/1000.; //GeV/c
+
+  }
   double GetTrueExpq3() const
   {
      return calcq3(GetTrueExperimentersQ2(), GetEnuTrue()/pow(10,3), GetElepTrue()/pow(10,3)); // In GeV
@@ -398,10 +407,11 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
 	    double momentumx = GetVecElem("mc_FSPartPx", i);
 	    double momentumy = GetVecElem("mc_FSPartPy", i);
 	    double momentumz = GetVecElem("mc_FSPartPz", i);
-	    ROOT::Math::PxPyPzEVector pion;
-	    pion.SetPxPyPzE(momentumx, momentumy,momentumz, energy); 
-            double momentum = pion.P();
-	    double pionmass = sqrt(pow(energy, 2) - pow(momentum, 2));  
+            double pionmomentum = TMath::Sqrt(pow(momentumx, 2) + pow(momentumy,2)+pow(momentumz,2));
+	   // ROOT::Math::PxPyPzEVector pion;
+	   // pion.SetPxPyPzE(momentumx, momentumy,momentumz, energy); 
+           // double momentum = pion.P();
+	    double pionmass = TMath::Sqrt(pow(energy, 2) - pow(pionmomentum, 2));  
 	    double KE = energy - pionmass;
 	    if (tpi > KE) tpi = KE;     
         }
@@ -486,7 +496,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
           run, subrun, gate, slice);
        if(NewEavail() < 50. && GetMuonPT() < .20){
        	std::cout << link << std::endl;
-       	std::cout << "Lepton E: " <<  GetElepTrueGeV() << " Run " << run << "/"<<subrun << "/" << gate << "/" << slice << std::endl;
+       	//std::cout << "Lepton E: " <<  GetElepTrueGeV() << " Run " << run << "/"<<subrun << "/" << gate << "/" << slice << std::endl;
        }
 
  }
@@ -505,7 +515,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
           run, subrun, gate, slice);
        if(NewEavail() < 50. && GetMuonPT() < .20){
         std::cout << link << std::endl;
-        std::cout << "Lepton E: " <<  GetMuonPT() << " Run " << run << "/"<<subrun << "/" << gate << "/" << slice << std::endl;
+       // std::cout << "Lepton E: " <<  GetMuonPT() << " Run " << run << "/"<<subrun << "/" << gate << "/" << slice << std::endl;
        }
 
  }
