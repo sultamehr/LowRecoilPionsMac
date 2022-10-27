@@ -29,9 +29,15 @@ bool isCCInclusiveSignal( ChainWrapper& chw, int entry )
   double pSquare = pow(true_muon_px,2) + pow(pyprime,2) + pow(pzprime,2);
   theta = acos( pzprime / sqrt(pSquare) );
   theta *= 180./3.14159;
-
+  int npdg = chw.GetValue("mc_nFSPart", entry);
+  int npions = 0;
+  for (int i = 0; i < npdg; i++)
+  {
+      int pdg = chw.GetValue("mc_FSPartPDG", entry, i);
+      if (pdg == 211) npions++;	
+  }
   //if(!chw.GetValue("truth_is_fiducial",entry)) return false; //Doesn't work for MasterAnaDev tuples.  What does this even mean in the targets anyway? :(
-  if( pzprime >= 1.5 && theta <= 20.0 ) return true;
+  if( pzprime >= 1.5 && theta <= 20.0 && npions > 0 ) return true;
   return false;
 
 }

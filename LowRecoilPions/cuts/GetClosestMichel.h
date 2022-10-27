@@ -71,6 +71,7 @@ class GetClosestMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
            evt.best_y = evt.m_nmichels[i].m_y2;
            evt.best_z = evt.m_nmichels[i].m_z2;
            }
+	   //if (bmatch == 1 || bmatch ==2)  univ.PrintTrueArachneLink(); //TODO: PRINT ARACHNE LINK
            evt.b_truex = evt.m_nmichels[i].true_initialx;
            evt.b_truey = evt.m_nmichels[i].true_initialy;
            evt.b_truez = evt.m_nmichels[i].true_initialz;
@@ -85,6 +86,7 @@ class GetClosestMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
        if (closestMichel.empty()) return false;
        double lowtpiinevent = closestMichel[0].pionKE;
        //std::cout << "Closest Michel Pion KE is " << lowtpiinevent << std::endl;
+       //if (closestMichel[0].BestMatch == 1 || closestMichel[0].BestMatch == 2) univ.PrintTrueArachneLink();
        evt.lowTpi = lowtpiinevent;
        evt.pT_reco = univ.GetMuonPT();
        evt.q3_reco = univ.Getq3();

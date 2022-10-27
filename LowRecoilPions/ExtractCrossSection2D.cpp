@@ -70,11 +70,6 @@ void Plot(PlotUtils::MnvH1D& hist, const std::string& stepName, const std::strin
 
   plotter.DrawErrorSummary(&hist, "TR", true, true, 1e-5, false, "Other");
   can.Print((prefix + "_" + stepName + "_otherUncertainties.png").c_str());
-
-  const std::string systname("Cross Section Models");
-  plotter.DrawErrorSummary(&hist, "TR", true, true, 0.00001, false, systname, true, "");
-  can.Print((prefix + "_" + stepName + "_CrossSectionModels.png").c_str());
-
 }
 
 //Unfolding function from Aaron Bercelle
@@ -82,17 +77,14 @@ void Plot(PlotUtils::MnvH1D& hist, const std::string& stepName, const std::strin
 PlotUtils::MnvH1D* UnfoldHist( PlotUtils::MnvH1D* h_folded, PlotUtils::MnvH2D* h_migration, int num_iter )
 {
   static MinervaUnfold::MnvUnfold unfold;
-  unfold.setUseBetterStatErrorCalc(true);
-
   PlotUtils::MnvH1D* h_unfolded = nullptr;
 
   //bool bUnfolded = false;
 
   TMatrixD dummyCovMatrix;
-  if(!unfold.UnfoldHisto( h_unfolded, dummyCovMatrix, h_migration, h_folded, RooUnfold::kBayes, num_iter, true, true ))
+  if(!unfold.UnfoldHisto( h_unfolded, dummyCovMatrix, h_migration, h_folded, RooUnfold::kBayes, num_iter, true, false ))
     return nullptr;
 
-  //unfold.Unfold(h_unfolded, h_migration, h_folded, RooUnfold::kBayes, num_iter);
   /////////////////////////////////////////////////////////////////////////////////////////  
   //No idea if this is still needed
   //Probably.  This gets your stat unfolding covariance matrix
@@ -104,13 +96,8 @@ PlotUtils::MnvH1D* UnfoldHist( PlotUtils::MnvH1D* h_folded, PlotUtils::MnvH2D* h
   TH1D* hTruthDummy     = new TH1D(h_migration->ProjectionY()->GetCVHistoWithStatError());
   TH1D* hBGSubDataDummy = new TH1D(h_folded->GetCVHistoWithStatError());
   TH2D* hMigrationDummy = new TH2D(h_migration->GetCVHistoWithStatError());
-  
-  
-  
-  
   unfold.UnfoldHisto(hUnfoldedDummy, unfoldingCovMatrixOrig, hMigrationDummy, hRecoDummy, hTruthDummy, hBGSubDataDummy,RooUnfold::kBayes, num_iter);//Stupid RooUnfold.  This is dummy, we don't need iterations
-  
-  
+
   correctNbins=hUnfoldedDummy->fN;
   matrixRows=unfoldingCovMatrixOrig.GetNrows();
   if(correctNbins!=matrixRows){
@@ -128,8 +115,6 @@ PlotUtils::MnvH1D* UnfoldHist( PlotUtils::MnvH1D* h_folded, PlotUtils::MnvH2D* h
   delete hTruthDummy;
   delete hBGSubDataDummy;
   h_unfolded->PushCovMatrix("unfoldingCov",unfoldingCovMatrixOrig);
- 
- 
 
   /////////////////////////////////////////////////////////////////////////////////////////  
   return h_unfolded;
@@ -201,14 +186,15 @@ int main(const int argc, const char** argv)
       auto simEventRate = effDenom->Clone(); //Make a copy for later
       auto recosignal = util::GetIngredient<PlotUtils::MnvH1D>(*mcFile, "selected_signal_reco", prefix);
       auto purdenom = util::GetIngredient<PlotUtils::MnvH1D>(*dataFile, "data", prefix); 
+      //folded->GetXaxis()->SetRangeUser(0.0, 800.);
+      //migration->GetXaxis()->SetRangeUser(0.0, 800.);
+      //migration->GetYaxis()->SetRangeUser(0.0, 800.);
+      //effNum->GetXaxis()->SetRangeUser(0.0, 800.);
+      //effDenom->GetXaxis()->SetRangeUser(0.0, 800.);
+      //simEventRate->GetXaxis()->SetRangeUser(0.0, 800.);
+      //recosignal->GetXaxis()->SetRangeUser(0.0, 800.);
 
-      //folded->GetXaxis()->SetRangeUser(0.0, 1400.);
-      //migration->GetXaxis()->SetRangeUser(0.0,1400.);
-      //migration->GetYaxis()->
-
-
-      auto purnum = recosignal->Clone();
-      auto purden = purdenom->Clone();
+      
       const auto fiducialFound = std::find_if(mcFile->GetListOfKeys()->begin(), mcFile->GetListOfKeys()->end(),
                                               [&prefix](const auto key)
                                               {
@@ -246,10 +232,9 @@ int main(const int argc, const char** argv)
       Plot(*toSubtract, "BackgroundSum", prefix);
       Plot(*flux, "Flux",prefix);
       //toSubtract->Write();
-      auto bkgtoSubtract = toSubtract->GetBinNormalizedCopy(); //GetCVHistoWithError().Clone();
-      //bkgtoSubtract.GetXaxis()->SetTitle(prefix);
-      bkgtoSubtract.Scale(dataPOT/mcPOT);
-      bkgtoSubtract.GetYaxis()->SetRangeUser(0.0, 3500.);
+      auto bkgtoSubtract = toSubtract->GetBinNormalizedCopy();//.GetCVHistoWithError().Clone();
+      bkgtoSubtract.GetXaxis()->SetTitle("Available Energy (MeV)");
+      bkgtoSubtract.GetYaxis()->SetRangeUser(0.0, 17000.);
       bkgtoSubtract.GetYaxis()->SetTitle("N Background Events");
       Plot(bkgtoSubtract, "BackgroundSumNorm", prefix);
       auto bkgSubtracted = std::accumulate(backgrounds.begin(), backgrounds.end(), folded->Clone(),
@@ -259,7 +244,6 @@ int main(const int argc, const char** argv)
                                              sum->Add(hist, -dataPOT/mcPOT);
                                              return sum;
                                            });
-      
       Plot(*bkgSubtracted, "backgroundSubtracted", prefix);
 
       auto outFile = TFile::Open((prefix + "_crossSection.root").c_str(), "CREATE");
@@ -277,7 +261,7 @@ int main(const int argc, const char** argv)
       Plot(*unfolded, "unfolded", prefix);
       unfolded->Clone()->Write("unfolded"); //TODO: Seg fault first appears when I uncomment this line
       std::cout << "Survived writing the unfolded histogram.\n" << std::flush; //This is evidence that the problem is on the final file Write() and not unfolded->Clone()->Write().
-      purnum->Divide(purnum, purden);
+      recosignal->Divide(recosignal, purdenom);
       Plot(*recosignal, "Purity", prefix);   
       recosignal->Clone()->Write("Purity");
       effNum->Divide(effNum, effDenom); //Only the 2 parameter version of MnvH1D::Divide()
@@ -301,7 +285,7 @@ int main(const int argc, const char** argv)
     }
     catch(const std::runtime_error& e)
     {
-      std::cerr << "Failed to extract cross section for prefix " << prefix << ": " << e.what() << "\n";
+      std::cerr << "Failed to extra a cross section for prefix " << prefix << ": " << e.what() << "\n";
       return 4;
     }
   }

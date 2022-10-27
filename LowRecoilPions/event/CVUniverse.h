@@ -137,13 +137,22 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   double GetBjorkenXTrue() const {
     return GetDouble("mc_Bjorkenx");
   }
+  double GetZero() const{
+    return 0.0;
+  }
 
   double GetBjorkenYTrue() const {
     return GetDouble("mc_Bjorkeny");
   }
 
   virtual bool IsMinosMatchMuon() const {
-    return GetInt("has_interaction_vertex") == 1;
+    bool ismatch = GetBool("isMinosMatchTrack");
+    return ismatch;
+  }
+ 
+  virtual bool isMuonCharge() const{
+   double charge = GetDouble("MasterAnaDev_minos_trk_qp");
+   return charge < 0.0;
   }
   
   ROOT::Math::XYZTVector GetVertex() const
@@ -359,6 +368,57 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
  }
 
 
+
+ 
+ virtual double GetTrueIntVtxX() const {return GetVecElem("mc_vtx", 0);}
+ virtual double GetTrueIntVtxY() const {return GetVecElem("mc_vtx", 1);}
+ virtual double GetTrueIntVtxZ() const {return GetVecElem("mc_vtx", 2);}
+ 
+ virtual bool IsInHexagon(double x, double y, double apothem) const {
+   double lenOfSide = apothem * (2 / sqrt(3));
+   double slope = (lenOfSide / 2.0) / apothem;
+   double xp = fabs(x);
+   double yp = fabs(y);
+
+   if ((xp * xp + yp * yp) < apothem * apothem)
+       return true;
+   else if (xp <= apothem && yp * yp < lenOfSide / 2.0)
+       return true;
+   else if (xp <= apothem && yp < lenOfSide - xp * slope)
+       return true;
+
+   return false;
+ }
+
+ virtual bool IsInPlastic() const {
+    if (!IsInHexagon(GetVecElem("mc_vtx", 0), GetVecElem("mc_vtx", 1), 1000.0)) return false;  // This is in the calorimeters
+    double mc_vtx_z = GetVecElem("mc_vtx", 2);
+    if (mc_vtx_z > 8467.0) return false;  // Ditto
+    int mc_nuclei = GetInt("mc_targetZ");
+    // In the carbon target?  The z is gotten from NukeBinningUtils
+    if (fabs(mc_vtx_z - 4945.92) <=
+          PlotUtils::TargetProp::ThicknessMC::Tgt3::C / 2 &&
+      mc_nuclei == 6)
+    return false;
+    // Is it in water Targer?
+    if (5200 < mc_vtx_z && mc_vtx_z < 5420 && (mc_nuclei == 8 || mc_nuclei == 1))
+    return false;
+    // Finally, do you have target material?  I'm going to say lead/iron isn't a
+    //   // big consideration elsewhere in the detector
+    if (mc_nuclei == 26 || mc_nuclei == 82) return false;
+    return true; 
+ }
+ 
+ virtual double GetDiffractiveWeight() const {
+    if (GetInt("mc_intType") != 4) return 1.;
+    if (!IsInPlastic() && !PlotUtils::TargetUtils::Get().InWaterTargetMC(
+                            GetTrueIntVtxX(), GetTrueIntVtxY(),
+                            GetTrueIntVtxZ(), GetInt("mc_targetZ"))) {
+    return 1.;
+    }
+    return 1.4368;
+ }
+
  virtual int GetTrueNPionsinEvent() const {
      int npion = 0;
      
@@ -378,7 +438,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
      for (int i = 0; i< pdgsize; i++)
       {
           int pdg = GetVecElem("mc_FSPartPDG", i);
-          if (pdg == 311 or pdg == 321) npart++;
+          if (pdg == 321) npart++;
       }
       return npart;
  }
@@ -421,6 +481,17 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   
   virtual int GetTrueNPions() const{
       return GetInt("FittedMichel_all_piontrajectory_pdg_sz");
+  }
+
+  virtual int GetTrueNPiPlus() const{
+	int npiplus = 0;
+	int npi = GetTrueNPions();
+	for (int i = 0; i < npi; i++){
+	    int pdg = GetVecElem("FittedMichel_all_piontrajectory_pdg", i);
+	    if (pdg == 211) npiplus++;
+	
+	}
+	return npiplus;
   }
 
   virtual int GetPionParentID(int i) const {
@@ -494,11 +565,13 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
           "arachne.html\?det=SIM_minerva&recoVer=v21r1p1&run=%d&subrun=%d&gate="
           "%d&slice=%d",
           run, subrun, gate, slice);
-       if(NewEavail() < 50. && GetMuonPT() < .20){
-       	std::cout << link << std::endl;
-       	//std::cout << "Lepton E: " <<  GetElepTrueGeV() << " Run " << run << "/"<<subrun << "/" << gate << "/" << slice << std::endl;
-       }
-
+       	  std::cout << link << std::endl;
+       	  std::cout << "Lepton E: " <<  GetElepTrueGeV() << " Run " << run << "/"<<subrun << "/" << gate << "/" << slice << std::endl;
+	  std::cout << "Printing Available Energy " << NewEavail() << std::endl;
+	  std::cout << "Muon P: " << GetMuonP() << std::endl;
+	  std::cout << "Get Muon Pt: " << GetMuonPT() << std::endl;
+	  std::cout << "Get Muon Pz: " << GetMuonPz() << std::endl;
+	  std::cout << "Get Muon PT True " << GetMuonPTTrue() << std::endl;
  }
 
  virtual void PrintDataArachneLink() const {
@@ -659,14 +732,17 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
    	 Eavail += energy;
         }
         */	  
-        if (pdg == 211) Eavail+= energy - 139.57; // subtracting pion mass to get Kinetic energy
-        else if (abs(pdg) == 2212) Eavail += energy - 938.28; // proton
+        if (pdg == 211 || pdg == -211) Eavail+= energy - 139.57; // subtracting pion mass to get Kinetic energy
+        else if (pdg == 2212) Eavail += energy - 938.28; // proton
         else if (pdg == 111) Eavail += energy; // pi0
         else if (pdg == 22) Eavail += energy; // photons
         else if (pdg == 311) Eavail += energy - 497.611/2.0; // K0 ???? - Kaon rest mass / 2
         else if (abs(pdg) == 321) Eavail += energy - 497.611/2.0; // Kaon+ Kinetic Energy  divide by Kmass/2 
-        else if (pdg == 551) Eavail += energy; //Adding etas
-	//else if (abs(pdg) !=  2112) Eavail += energy; //Adding anything else except neutrons.  
+        else if (pdg == 221) Eavail += energy; //Adding etas
+	else if (pdg == 3222) Eavail += energy - 1115.683; // mass of Lambda 
+	else if (pdg == 3122) Eavail += energy - 1189.37 ; // mass of Sigma
+        	
+        //else if (abs(pdg) !=  2112) Eavail += energy; //Adding anything else except neutrons.  
        
      }
      //std::cout << "True Eavail is " << Eavail << " --- Reco Eavail is " << GetEavail() << "New EAvail is " << GetNewEavail() << std::endl;

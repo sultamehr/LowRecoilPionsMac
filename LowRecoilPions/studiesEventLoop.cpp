@@ -1,5 +1,5 @@
-#define MC_OUT_FILE_NAME "runEventLoopMC_July272022_EavailComp_q3bin6_reweight.root"
-#define DATA_OUT_FILE_NAME "runEventLoopData_July272022_EavailComp_q3bin6_reweight.root"
+#define MC_OUT_FILE_NAME "studiesMC.root"
+#define DATA_OUT_FILE_NAME "studiesData.root"
 #define MC_SIDE_FILE_NAME "runEventLoopMC_July272022_Sideband_q3bin6_reweight.root"
 #define DATA_SIDE_FILE_NAME "runEventLoopDATA_July272022_Sideband_q3bin6_reweight.root"
 
@@ -102,8 +102,12 @@ enum ErrorCodes
 #include "PlotUtils/RPAReweighter.h"
 #include "PlotUtils/MINOSEfficiencyReweighter.h"
 #include "PlotUtils/TargetUtils.h"
-#include "../MAT-MINERvA/weighters/PionReweighter.h"
-#include "PlotUtils/LowRecPionSignal.h"
+#include "util/PionReweighter.h"
+#include "cuts/LowRecPionSignal.h"
+#include "PlotUtils/LowQ2PiReweighter.h"
+#include "util/DiffractiveReweighter.h"
+#include "PlotUtils/GeantNeutronCVReweighter.h"
+#include "PlotUtils/FSIReweighter.h"
 #pragma GCC diagnostic pop
 
 //ROOT includes
@@ -414,8 +418,8 @@ int main(const int argc, const char** argv)
   preCuts.emplace_back(new GetClosestMichel<CVUniverse, MichelEvent>(0));
 
 
-  TFile* mc_MichelStudies = TFile::Open("Sep052022_Pmucut_noreweight_pTbin6_MC.root", "RECREATE");
-  TFile* data_MichelStudies = TFile::Open("Sep052022_Pmucut_noreweight_pTbin6_data.root", "RECREATE");
+  TFile* mc_MichelStudies = TFile::Open("studiesMC.root", "RECREATE");
+  TFile* data_MichelStudies = TFile::Open("studiesData.root", "RECREATE");
 
   signalDefinition.emplace_back(new truth::IsNeutrino<CVUniverse>());
   signalDefinition.emplace_back(new truth::IsCC<CVUniverse>());
@@ -442,8 +446,22 @@ int main(const int argc, const char** argv)
   MnvTunev1.emplace_back(new PlotUtils::MINOSEfficiencyReweighter<CVUniverse, MichelEvent>());
   MnvTunev1.emplace_back(new PlotUtils::RPAReweighter<CVUniverse, MichelEvent>());
   //TODO: Add my pion reweighter here. - Mehreen S.  Nov 22, 2021
-  //MnvTunev1.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>()); 
-  PlotUtils::Model<CVUniverse, MichelEvent> model(std::move(MnvTunev1));
+  MnvTunev1.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>()); 
+  //PlotUtils::Model<CVUniverse, MichelEvent> model(std::move(MnvTunev1));
+
+  std::vector<std::unique_ptr<PlotUtils::Reweighter<CVUniverse, MichelEvent>>> MnvTunev4;
+  MnvTunev4.emplace_back(new PlotUtils::FluxAndCVReweighter<CVUniverse, MichelEvent>());
+  MnvTunev4.emplace_back(new PlotUtils::GENIEReweighter<CVUniverse, MichelEvent>(true, false));
+  MnvTunev4.emplace_back(new PlotUtils::LowRecoil2p2hReweighter<CVUniverse, MichelEvent>());
+  MnvTunev4.emplace_back(new PlotUtils::MINOSEfficiencyReweighter<CVUniverse, MichelEvent>());
+  MnvTunev4.emplace_back(new PlotUtils::RPAReweighter<CVUniverse, MichelEvent>());
+  MnvTunev4.emplace_back(new PlotUtils::LowQ2PiReweighter<CVUniverse, MichelEvent>("MENU1PI"));
+  MnvTunev4.emplace_back(new PlotUtils::DiffractiveReweighter<CVUniverse, MichelEvent>());
+  MnvTunev4.emplace_back(new PlotUtils::GeantNeutronCVReweighter<CVUniverse, MichelEvent>());
+  MnvTunev4.emplace_back(new PlotUtils::FSIReweighter<CVUniverse, MichelEvent>(true, true)); 
+  //Need to add Targetmass, COHPionWeight, GeantHadronWeight(is it only for Neutron?), MichelEfficiency
+
+  PlotUtils::Model<CVUniverse, MichelEvent> model(std::move(MnvTunev4));
 
   // Make a map of systematic universes
   // Leave out systematics when making validation histograms
@@ -472,7 +490,7 @@ int main(const int argc, const char** argv)
   
    
   int nq3mbins = mehreenQ3Bins.size() -1; 
-  std::vector<double> tpibins = {0, 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 46., 52.,60., 70., 80., 100., 125.,150., 175., 200., 225., 250., 275., 300., 350., 400., 500., 1000.};   
+  std::vector<double> tpibins = {0, 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 46., 52.,60., 70., 80., 100., 125.,150., 175., 200., 225., 250., 275., 300., 350., 400., 500., 700.,1000.};   
    std::vector<double> rangebins = {0., 8., 16., 24., 32., 40., 50., 65., 80.,95., 110., 140., 170., 200., 230., 260., 290., 310., 360., 400., 450., 500., 550., 600., 650., 700., 800., 900., 1000., 1200., 1400., 1800., 2400.};
 
   //std::vector<double> rangebins = {0, 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 44., 50., 56., 62., 70., 80.,90., 100., 110.,  120., 140., 160., 180., 200., 220., 240., 260., 280., 300., 325., 350., 375., 400., 450., 500., 550., 600., 650., 700., 800., 900., 1000., 1200., 1400., 1800., 2400.};             

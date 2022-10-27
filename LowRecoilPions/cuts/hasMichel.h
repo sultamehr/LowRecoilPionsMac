@@ -43,8 +43,8 @@ class hasMichel: public PlotUtils::Cut<UNIVERSE, EVENT>
         
        }
         //Filling Event Level Info needed for 2D selection 
-        double lowtpiinevent = univ.GetTrueTpi();
-        evt.lowTpi = lowtpiinevent;     
+        //double lowtpiinevent = univ.GetTrueTpi();
+        //evt.lowTpi = lowtpiinevent;     
         evt.pT_reco = univ.GetMuonPT();
 	evt.q3_reco = univ.Getq3();
 	evt.eavail_reco = univ.NewEavail();

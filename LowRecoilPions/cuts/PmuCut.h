@@ -19,7 +19,8 @@ class PmuCut: public PlotUtils::Cut<CVUniverse, EVENT>
     bool checkCut(const CVUniverse& univ, EVENT&) const
     {
       const double preco = univ.GetMuonP();
-      return (preco > fpMin); 
+      const double pz = univ.GetMuonPz();
+      return (preco > fpMin && pz > fpMin); 
     }
 
 };

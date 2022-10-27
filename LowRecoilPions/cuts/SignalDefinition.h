@@ -39,15 +39,9 @@ class hasTruePion: public PlotUtils::SignalConstraint<UNIVERSE>
     bool checkConstraint(const UNIVERSE& univ) const //override
     {
 
-      int npi = 0;
-      std::vector<int> npart = univ.GetTrueFSPDGCodes();
-      for (auto pdg : npart)
-      {
-         if (pdg == 211) npi++;
+      int npi = univ.GetTrueNPionsinEvent();
 
-      }
-
-      if (npi >= 1 && npi <= 3) return true;
+      if (npi > 0) return true;
       else return false;
     }
 };
@@ -86,7 +80,8 @@ class pMuCut: public PlotUtils::SignalConstraint<UNIVERSE>
     bool checkConstraint(const UNIVERSE& univ) const //override
     {
       double truep = univ.GetPmuTrue();
-      return (truep > fpMin);
+      
+      return (truep > fpMin && truep < 20.0);
     }
 };
 

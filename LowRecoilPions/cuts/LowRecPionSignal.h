@@ -15,15 +15,8 @@ namespace truth
 	private:
 	   bool checkConstraint(const UNIVERSE& univ) const override
 	   {
-		int npi = 0;
-      		std::vector<int> npart = univ.GetTrueFSPDGCodes();
-      		for (auto pdg : npart)
-      		{
-         		if (pdg == 211) npi++;
-
-      		}
-
-      		if (npi >= 1 && npi <= 3) return true;
+		int npi = univ.GetTrueNPionsinEvent(); //univ.GetTrueNPiPlus();  //univ.GetTrueNPionsinEvent();
+      		if (npi > 0) return true;
       		else return false;	
 	
 	   }
@@ -46,9 +39,10 @@ namespace truth
       bool checkConstraint(const UNIVERSE& univ) const //override
       {
         double truepT = univ.GetMuonPTTrue();
-        return truepT > fpTMin && truepT < fpTMax;
+        return (truepT > fpTMin && truepT < fpTMax);
       }
   };
+
 
   template <class UNIVERSE>
   class pMuCut: public PlotUtils::SignalConstraint<UNIVERSE>
@@ -64,7 +58,26 @@ namespace truth
       bool checkConstraint(const UNIVERSE& univ) const //override
       {
         double truep = univ.GetPmuTrue();
-        return (truep > fpMin);
+        return (truep > fpMin and truep < 20.0);
       }
   };
+ 
+  template <class UNIVERSE>
+  class EAvailCut: public PlotUtils::SignalConstraint<UNIVERSE>
+  {
+    public:
+      EAvailCut(const double EMax): PlotUtils::SignalConstraint<UNIVERSE>("True E Available < " + std::to_string(EMax) + " MeV"),
+      fEMax(EMax)
+      {
+      }
+
+    private:
+      double fEMax; // Max E Available allowed in MeV
+      bool checkConstraint(const UNIVERSE& univ) const //override
+      {
+        double trueE = univ.GetTrueEAvail();
+        return (trueE > 0.0 and trueE < fEMax);
+      }
+  };
+
 }   
