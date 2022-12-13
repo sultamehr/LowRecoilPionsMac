@@ -20,21 +20,29 @@ namespace PlotUtils
 {
 
   template <class UNIVERSE, class EVENT = MichelEvent>
-  class COHPionReweighter:public Reweighter<UNIVERSE, EVENT>
+  class Pi0BkgScale:public Reweighter<UNIVERSE, EVENT>
   {
     public:
-      COHPionReweighter() = default;
-      virtual ~COHPionReweighter() = default;
+      Pi0BkgScale() = default;
+      virtual ~Pi0BkgScale() = default;
 
       virtual double GetWeight(const UNIVERSE& univ, const EVENT& myevent /*event*/) const override{
-	if( univ.GetInt("mc_intType") == 4){
+	if( univ.GetInt("mc_intType") != 4){
 	   
  	    int npi = univ.GetTrueNPionsinEvent();
-	    if (npi == 0) return 1.0; 
+            bool npi0 = GetTrueIsFSPartInEvent(111);
+	    if (npi == 1) return 1.0;
+   	    else{
+		if (npi0 == true){
+		   std::vector<double> eavailbins = {};
+		   std::vector<double> scalfactors = {1.20, 1.14, 1.28, 0.98, 1.05, 0.95, 1.04, 1.02};
+	           
+
+		}
+
+ 	    } 
 	    double angle = univ.GetTrueAngleHighTpi(); 
 	    double KE = univ.GetTrueHighTpi();
- 	    //double weight = GetCoherentPiWeight(angle, KE); //PlotUtils::weightCoherentPi().get_combined_weight(angle, KE);
-            //return weight;
 	 }
          else return 1.0;
 

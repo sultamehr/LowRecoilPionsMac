@@ -80,6 +80,7 @@ enum ErrorCodes
 #include "cuts/Distance2DSideband.h"
 #include "cuts/RecoilERange.h"
 #include "cuts/PmuCut.h"
+#include "cuts/WexpRecoCut.h"
 #include "event/SetDistanceMichelSideband.h"
 #include "event/SetDistanceMichelSelection.h"
 #include "event/GetClosestMichel.h"
@@ -102,12 +103,15 @@ enum ErrorCodes
 #include "PlotUtils/RPAReweighter.h"
 #include "PlotUtils/MINOSEfficiencyReweighter.h"
 #include "PlotUtils/TargetUtils.h"
+#include "PlotUtils/WeightFunctions.h" 
 #include "util/PionReweighter.h"
 #include "util/DiffractiveReweighter.h"
 #include "cuts/LowRecPionSignal.h"
 #include "PlotUtils/LowQ2PiReweighter.h"
 #include "PlotUtils/GeantNeutronCVReweighter.h"
 #include "PlotUtils/FSIReweighter.h"
+#include "util/COHPionReweighter.h"
+#include "util/TargetMassReweighter.h"
 #pragma GCC diagnostic pop
 
 //ROOT includes
@@ -183,7 +187,8 @@ void LoopAndFillEventSelection(
                 	var->mcTotalHist->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
                 	(*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
                 	var->FillCategHistos(*universe,var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
-                	double recoX = var->GetRecoValueX(*universe);
+                	var->mc_trueHist->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight2);
+                        double recoX = var->GetRecoValueX(*universe);
                 	double truevarX = var->GetTrueValueX(*universe);
                 	double recomtrueX = recoX - truevarX;
                 	double recoY = var->GetRecoValueY(*universe);
@@ -204,6 +209,9 @@ void LoopAndFillEventSelection(
 
 			for(auto& var: vars)
           		{
+				double diff = var->GetTrueValue(*universe) - var->GetRecoValue(*universe);
+				
+
 				var->migration->FillUniverse(universe, var->GetRecoValue(*universe), var->GetTrueValue(*universe), weight2);
                                 var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValue(*universe), weight2);
 				var->selectedSignalReco->FillUniverse(universe, var->GetRecoValue(*universe), weight2); //Efficiency numerator in reco variables.  Useful for warping studies 
@@ -451,8 +459,15 @@ int main(const int argc, const char** argv)
   PlotUtils::MinervaUniverse::SetNuEConstraint(true);
   PlotUtils::MinervaUniverse::SetPlaylist(options.m_plist_string); //TODO: Infer this from the files somehow?
   PlotUtils::MinervaUniverse::SetAnalysisNuPDG(14);
-  PlotUtils::MinervaUniverse::SetNFluxUniverses(2); // TODO: CHANGE TO 100 later. For now, testing with no flux systematics. 
+  PlotUtils::MinervaUniverse::SetNFluxUniverses(10); // TODO: CHANGE TO 100 later. For now, testing with no flux systematics. 
   PlotUtils::MinervaUniverse::SetZExpansionFaReweight(false);
+ 
+  //For MnvTunev4.3.1 - Aaron's Tune we need the following:
+  //PlotUtils::MinervaUniverse::SetNonResPiReweight(true);
+  //PlotUtils::MinervaUniverse::SetDeuteriumGeniePiTune(true);
+  PlotUtils::MinervaUniverse::SetReadoutVolume("Tracker");
+  //PlotUtils::MinervaUniverse::SetMHRWeightNeutronCVReweight( true );
+  //PlotUtils::MinervaUniverse::SetMHRWeightElastics( true ); 
 
   //Now that we've defined what a cross section is, decide which sample and model
   //we're extracting a cross section for.
@@ -471,7 +486,7 @@ int main(const int argc, const char** argv)
   preCuts.emplace_back(new reco::IsNeutrino<CVUniverse, MichelEvent>());
   //preCuts.emplace_back(new Q3RangeReco<CVUniverse, MichelEvent>(0.0,1.2));
   preCuts.emplace_back(new PTRangeReco<CVUniverse, MichelEvent>(0.0,1.0));
-  preCuts.emplace_back(new RecoilERange<CVUniverse, MichelEvent>(0.0,1.40));
+  preCuts.emplace_back(new RecoilERange<CVUniverse, MichelEvent>(0.0,1.5));
   preCuts.emplace_back(new PmuCut<CVUniverse, MichelEvent>(1.5));
   preCuts.emplace_back(new hasMichel<CVUniverse, MichelEvent>());
    
@@ -483,6 +498,7 @@ int main(const int argc, const char** argv)
   signalDefinition.emplace_back(new truth::IsNeutrino<CVUniverse>());
   signalDefinition.emplace_back(new truth::IsCC<CVUniverse>());
   signalDefinition.emplace_back(new truth::HasPion<CVUniverse>());
+  //signalDefinition.emplace_back(new truth::EavailCut<CVUniverse>());
   //signalDefinition.emplace_back(new Q3Limit<CVUniverse>(0.0, 1.20));
   //signalDefinition.emplace_back(new truth::ZRange<CVUniverse>("Tracker", minZ, maxZ));
   //signalDefinition.emplace_back(new truth::Apothem<CVUniverse>(apothem));
@@ -498,10 +514,11 @@ int main(const int argc, const char** argv)
   phaseSpace.emplace_back(new truth::PZMuMin<CVUniverse>(1500.));
   phaseSpace.emplace_back(new truth::pTRangeLimit<CVUniverse>(0., 1.0));
   phaseSpace.emplace_back(new truth::pMuCut<CVUniverse>(1.5));
+  //phaseSpace.emplace_back(new truth::TrueEavailCut<CVUniverse>());
   //phaseSpace.emplace_back(new truth::EAvailCut<CVUniverse>(1500.));
 
   PlotUtils::Cutter<CVUniverse, MichelEvent> mycuts(std::move(preCuts), std::move(sidebands) , std::move(signalDefinition),std::move(phaseSpace));
-
+  
   std::vector<std::unique_ptr<PlotUtils::Reweighter<CVUniverse, MichelEvent>>> MnvTunev1;
   MnvTunev1.emplace_back(new PlotUtils::FluxAndCVReweighter<CVUniverse, MichelEvent>());
   MnvTunev1.emplace_back(new PlotUtils::GENIEReweighter<CVUniverse, MichelEvent>(true, false));
@@ -510,21 +527,27 @@ int main(const int argc, const char** argv)
   MnvTunev1.emplace_back(new PlotUtils::RPAReweighter<CVUniverse, MichelEvent>());
   //TODO: Add my pion reweighter here. - Mehreen S.  Nov 22, 2021
   MnvTunev1.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>()); 
+  PlotUtils::Model<CVUniverse, MichelEvent> model(std::move(MnvTunev1));
   //
+  
+
+  /* 
   std::vector<std::unique_ptr<PlotUtils::Reweighter<CVUniverse, MichelEvent>>> MnvTunev4;
   MnvTunev4.emplace_back(new PlotUtils::FluxAndCVReweighter<CVUniverse, MichelEvent>());
-  MnvTunev4.emplace_back(new PlotUtils::GENIEReweighter<CVUniverse, MichelEvent>(true, false));
+  MnvTunev4.emplace_back(new PlotUtils::GENIEReweighter<CVUniverse, MichelEvent>(true, true));
   MnvTunev4.emplace_back(new PlotUtils::LowRecoil2p2hReweighter<CVUniverse, MichelEvent>());
   MnvTunev4.emplace_back(new PlotUtils::MINOSEfficiencyReweighter<CVUniverse, MichelEvent>());
   MnvTunev4.emplace_back(new PlotUtils::RPAReweighter<CVUniverse, MichelEvent>());
-  MnvTunev4.emplace_back(new PlotUtils::LowQ2PiReweighter<CVUniverse, MichelEvent>("MENU1PI")); 
-  MnvTunev4.emplace_back(new PlotUtils::DiffractiveReweighter<CVUniverse, MichelEvent>());   
+  MnvTunev4.emplace_back(new PlotUtils::LowQ2PiReweighter<CVUniverse, MichelEvent>("MENU1PI"));
+  MnvTunev4.emplace_back(new PlotUtils::DiffractiveReweighter<CVUniverse, MichelEvent>());
   MnvTunev4.emplace_back(new PlotUtils::GeantNeutronCVReweighter<CVUniverse, MichelEvent>());
-  MnvTunev4.emplace_back(new PlotUtils::FSIReweighter<CVUniverse, MichelEvent>(true,true));
-  //Need to add Targetmass, FSI, COHPionWeight, GeantHadronWeight
+  MnvTunev4.emplace_back(new PlotUtils::FSIReweighter<CVUniverse, MichelEvent>(true, true)); 
+  //MnvTunev4.emplace_back(new PlotUtils::COHPionReweighter<CVUniverse, MichelEvent>());
+  MnvTunev4.emplace_back(new PlotUtils::TargetMassReweighter<CVUniverse, MichelEvent>()); 
   //MnvTunev4.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>());
-  PlotUtils::Model<CVUniverse, MichelEvent> model(std::move(MnvTunev1));
-
+  PlotUtils::Model<CVUniverse, MichelEvent> model(std::move(MnvTunev4));
+  */
+   
   // Make a map of systematic universes
   // Leave out systematics when making validation histograms
   const bool doSystematics = (getenv("MNV101_SKIP_SYST") == nullptr);
@@ -546,10 +569,10 @@ int main(const int argc, const char** argv)
 
 
 
-  std::vector<double> dansPTBins = {0, 0.075, 0.10, 0.15, 0.20, 0.30, 0.4, 0.50,0.60 , 0.7, 0.80,0.9, 1.,1.1, 1.2, 1.3, 1.4, 1.5, 2.0},
+  std::vector<double> dansPTBins = {0, 0.075, 0.10, 0.15, 0.20, 0.30, 0.4, 0.50,0.60 , 0.7, 0.80,0.9, 1.,1.1, 1.2, 1.3, 1.4, 1.5, 2.0, 3.0, 4.0},
                       dansPzBins = {1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 15, 20, 40, 60},
                       robsEmuBins = {0,1,2,3,4,5,7,9,12,15,18,22,36,50,75,80},
-                      mehreenQ3Bins = {0.0, 0.2,0.3, 0.4, 0.6, 0.9, 1.2, 1.5, 2.0, 3.0},
+                      mehreenQ3Bins = {0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2},
 		      mehreenpmubins = {0.0, 0.5, 1.0, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 15, 20, 40}, 
 		     robsRecoilBins;
   
@@ -557,12 +580,12 @@ int main(const int argc, const char** argv)
   int nq3mbins = mehreenQ3Bins.size() -1; 
   std::vector<double> tpibins = {0, 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 46., 52.,60., 70., 80., 100., 125.,150., 175., 200., 225., 250., 275., 300., 325., 350., 400., 500., 700., 1000.};   
   std::vector<double> rangebins = {0, 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 44., 50., 56., 62., 70., 80.,90., 100., 110.,  120., 140., 160., 180., 200., 220., 240., 260., 280., 300., 325., 350., 375., 400., 450., 500., 550., 600., 650., 700., 800., 900., 1000., 1200., 1400., 1800., 2400.};             
-  //std::vector<double> tpibins = {0., 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 46., 52., 60.,  70., 80., 90., 100., 120., 140., 160., 180., 200., 220., 240., 260.,280., 300., 320., 340., 360., 380., 400., 500., 1000.};
-  //std::vector<double> rangebins = {0., 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 46., 52., 60., 70., 80., 90., 100., 120., 140., 160., 180., 200., 220., 260., 280., 300., 320., 340., 360., 380., 400., 425., 450., 475., 500., 600., 700., 800., 1000., 1200., 1400., 1600., 2000., 2400.}; 
   std::vector<double> recoilbins = {0.0, 200., 300., 400., 500., 600., 800., 1000., 1200., 1400., 1600.};
-  std::vector<double> recoilbins2 = {0.0,100., 200., 300., 400., 500., 600., 800., 1000., 1200., 1400., 1600., 1800., 2000., 2200., 2400., 2600., 2800., 3000., 3200., 3600., 4000.};
-  const double robsRecoilBinWidth = 75; //MeV
-  for(int whichBin = 0; whichBin < 20 + 1; ++whichBin) robsRecoilBins.push_back(robsRecoilBinWidth * whichBin);
+  std::vector<double> recoilbins2 = {0.0, 150., 225., 300., 400., 500., 600., 700., 800., 900., 1000.};//, 1200.};// 2200., 2600., 3000., 6000.};
+  std::vector<double> wexpbins = {0.0,0.2, 0.4, .6, .8, 1.0, 1.1, 1.2, 1.3, 1.5, 1.7, 2.0, 2.5, 3.0, 4.0};
+  
+  //const double robsRecoilBinWidth = 75; //MeV
+  //for(int whichBin = 0; whichBin < 20 + 1; ++whichBin) robsRecoilBins.push_back(robsRecoilBinWidth * whichBin);
 
   std::vector<Variable*> vars = {
     new Variable("pTmu", "p_{T, #mu} [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue), //0
@@ -574,7 +597,10 @@ int main(const int argc, const char** argv)
     new Variable("LowTpi", "LowTpi", tpibins, &CVUniverse::GetZero, &CVUniverse::GetTrueLowestTpiEvent), 
     new Variable("AvailableE", "AvailableE", recoilbins2, &CVUniverse::NewEavail, &CVUniverse::GetTrueEAvail),//6 
     new Variable("Pmu", "pmu", mehreenpmubins, &CVUniverse::GetMuonP, &CVUniverse::GetPmuTrue), //7
-    new Variable("pTmubins", "pTmuy", mehreenQ3Bins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue) //8
+    new Variable("pTmubins", "pTmuy", mehreenQ3Bins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue), //8
+    //new Variable("EHadronic", "EHadronic", recoilbins2, &CVUniverse::GetEHad, &CVUniverse::GetTrueEHad), // 9
+    //new Variable("Wexp", "Wexp", wexpbins, &CVUniverse::GetWExp, &CVUniverse::GetTrueWexp), //10
+    new Variable("q3bins", "q3bins", dansPTBins,  &CVUniverse::Getq3, &CVUniverse::GetTrueQ3) //11
     /*new Variable("NewRecoilE", "NewRecoilE", robsRecoilBins, &CVUniverse::NewRecoilE, &CVUniverse::GetTrueQ0),//7
     new Variable("NewEAvailvq0", "NewEavailvq0", robsRecoilBins, &CVUniverse::NewEavail,&CVUniverse::GetTrueQ0),//8
     new Variable("pTmubins", "pTmuy", mehreenQ3Bins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue),//9
@@ -590,7 +616,9 @@ int main(const int argc, const char** argv)
  std::vector<Variable2D*> vars2D;
  vars2D.push_back(new Variable2D(*vars[6], *vars[1]));// q3bins vs Eavail
  vars2D.push_back(new Variable2D(*vars[6], *vars[8]));// pTbins vs Eavail
- 
+ //vars2D.push_back(new Variable2D(*vars[6], *vars[10]));// Wexp vs Eavail
+ //vars2D.push_back(new Variable2D(*vars[11], *vars[10])); // Wexp vs q3
+ vars2D.push_back(new Variable2D(*vars[9], *vars[9])); // q2 vs q0 (eHadronic)
  /* // TODO: make 2D plots for cross-section
  vars2D.push_back(new Variable2D(*vars[6], *vars[9])); //pTmubins(y) vs Eavail
  vars2D.push_back(new Variable2D(*vars[7], *vars[9])); //pTmubins(y) vs RecoilE
@@ -607,9 +635,9 @@ int main(const int argc, const char** argv)
  //vars2D.push_back(new Variable2D(*vars[3], *vars[13])); //q3bins(y) vs pz
  //vars2D.push_back(new Variable2D(*vars[2], *vars[13])); //q3bins(y) vs q2
 
- std::vector<Variable*> sidevars = vars; 
+ std::vector<Variable*> sidevars;// = vars; 
 
- std::vector<Variable2D*> sidevars2D = vars2D;
+ std::vector<Variable2D*> sidevars2D;// = vars2D;
 
   std::vector<Study*> studies;
   std::vector<Study*> sideband_studies;

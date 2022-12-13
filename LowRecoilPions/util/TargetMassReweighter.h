@@ -4,8 +4,8 @@
 //       Some Reweighters are mutually exclusive, and others are only needed for specific systematics.
 
 
-#ifndef COHPion_REWEIGHTER_H
-#define COHPion_REWEIGHTER_H
+#ifndef TARGETMASS_REWEIGHTER_H
+#define TARGETMASS_REWEIGHTER_H
 
 #if __cplusplus < 201103L
   #define override
@@ -15,33 +15,28 @@
 #include <string>
 #include <vector>
 #include "PlotUtils/Reweighter.h"
+#include "systematics/Systematics.h"
+#include "PlotUtils/TargetMassSystematics.h"
+#include "PlotUtils/MichelSystematics.h"
 #include "PlotUtils/WeightFunctions.h"
+#include "PlotUtils/MnvTuneSystematics.h"
 namespace PlotUtils
 {
 
   template <class UNIVERSE, class EVENT = MichelEvent>
-  class COHPionReweighter:public Reweighter<UNIVERSE, EVENT>
+  class TargetMassReweighter:public Reweighter<UNIVERSE, EVENT>
   {
     public:
-      COHPionReweighter() = default;
-      virtual ~COHPionReweighter() = default;
+      TargetMassReweighter() = default;
+      virtual ~TargetMassReweighter() = default;
 
       virtual double GetWeight(const UNIVERSE& univ, const EVENT& myevent /*event*/) const override{
-	if( univ.GetInt("mc_intType") == 4){
-	   
- 	    int npi = univ.GetTrueNPionsinEvent();
-	    if (npi == 0) return 1.0; 
-	    double angle = univ.GetTrueAngleHighTpi(); 
-	    double KE = univ.GetTrueHighTpi();
- 	    //double weight = GetCoherentPiWeight(angle, KE); //PlotUtils::weightCoherentPi().get_combined_weight(angle, KE);
-            //return weight;
-	 }
-         else return 1.0;
-
+	double weight = 1.0; //GetTargetMassWeight();; 
+	return weight;
                 
 	
       };
-      virtual std::string GetName() const {return "COHPionReweighter"; }
+      virtual std::string GetName() const {return "TargetMassReweighter"; }
 
       virtual bool DependsReco() const {return false;}
       //virtual bool DependsTruth() const {return true;}; //Not needed as of time of writing.

@@ -1,7 +1,7 @@
-#define MC_OUT_FILE_NAME "runEventLoopMC_Aug292022_1000mm_pTbin6_noreweight.root"
-#define DATA_OUT_FILE_NAME "runEventLoopData_Aug292022_1000mm_pTbin6_noreweight.root"
-#define MC_SIDE_FILE_NAME "runEventLoopMC_Sep022022_Sideband1000_pMu1_5_reweight.root"
-#define DATA_SIDE_FILE_NAME "runEventLoopDATA_Sep022022_Sideband1000_pMu1_5_reweight.root"
+#define MC_OUT_FILE_NAME "runEventLoopMC.root"
+#define DATA_OUT_FILE_NAME "runEventLoopData.root"
+#define MC_SIDE_FILE_NAME "runEventLoopMC_sideband.root"
+#define DATA_SIDE_FILE_NAME "runEventLoopDATA_sideband.root"
 
 
 #define USAGE \
@@ -535,7 +535,7 @@ int main(const int argc, const char** argv)
   preCuts.emplace_back(new reco::IsNeutrino<CVUniverse, MichelEvent>());
   //preCuts.emplace_back(new Q3RangeReco<CVUniverse, MichelEvent>(0.0,1.2));
   preCuts.emplace_back(new PTRangeReco<CVUniverse, MichelEvent>(0.0,1.0));
-  preCuts.emplace_back(new RecoilERange<CVUniverse, MichelEvent>(0.0,1.5));
+  preCuts.emplace_back(new RecoilERange<CVUniverse, MichelEvent>(0.0,1.50));
   preCuts.emplace_back(new PmuCut<CVUniverse, MichelEvent>(1.5));
   preCuts.emplace_back(new hasMichel<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new RemoveSignalEvents<CVUniverse, MichelEvent>(150.)); 
@@ -550,8 +550,8 @@ int main(const int argc, const char** argv)
   signalDefinition.emplace_back(new truth::IsCC<CVUniverse>());
   signalDefinition.emplace_back(new truth::HasPion<CVUniverse>());
   //signalDefinition.emplace_back(new Q3Limit<CVUniverse>(0.0, 1.20));
-  signalDefinition.emplace_back(new truth::ZRange<CVUniverse>("Tracker", minZ, maxZ));
-  signalDefinition.emplace_back(new truth::Apothem<CVUniverse>(apothem));
+ // signalDefinition.emplace_back(new truth::ZRange<CVUniverse>("Tracker", minZ, maxZ));
+ // signalDefinition.emplace_back(new truth::Apothem<CVUniverse>(apothem));
  
   //signalDefinition.emplace_back(new hasTruePion<CVUniverse>());                                                                                                              
   
@@ -594,59 +594,40 @@ int main(const int argc, const char** argv)
   if(doSystematics) truth_bands = GetStandardSystematics(options.m_truth);
   truth_bands["cv"] = {new CVUniverse(options.m_truth)};
 
-  std::vector<double> dansPTBins = {0, 0.075, 0.10, 0.15, 0.20, 0.30, 0.4, 0.50,0.60 , 0.7, 0.80,0.9, 1.,1.1, 1.2, 1.3, 1.4, 1.5},
+  std::vector<double> dansPTBins = {0, 0.075, 0.10, 0.15, 0.20, 0.30, 0.4, 0.50,0.60 , 0.7, 0.80,0.9, 1.,1.1, 1.2, 1.3, 1.4, 1.5, 2.0},
                       dansPzBins = {1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 15, 20, 40, 60},
                       robsEmuBins = {0,1,2,3,4,5,7,9,12,15,18,22,36,50,75,80},
-                      mehreenQ3Bins = {0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4},
-		      mehreenpmubins = {0.0, 0.5, 1.0, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 15, 20, 40, 60},
-		      robsRecoilBins;
-  
-   
-  int nq3mbins = mehreenQ3Bins.size() -1; 
-  std::vector<double> tpibins = {0, 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 46., 52.,60., 70., 80., 100., 125.,150., 175., 200., 225., 250., 275., 300., 325., 350., 400., 500., 1000.};   
-  std::vector<double> rangebins = {0, 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 44., 50., 56., 62., 70., 80.,90., 100., 110.,  120., 140., 160., 180., 200., 220., 240., 260., 280., 300., 325., 350., 375., 400., 450., 500., 550., 600., 650., 700., 800., 900., 1000., 1200., 1400., 1800., 2400.};             
-  //std::vector<double> tpibins = {0., 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 46., 52., 60.,  70., 80., 90., 100., 120., 140., 160., 180., 200., 220., 240., 260.,280., 300., 320., 340., 360., 380., 400., 500., 1000.};
-  //std::vector<double> rangebins = {0., 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 46., 52., 60., 70., 80., 90., 100., 120., 140., 160., 180., 200., 220., 260., 280., 300., 320., 340., 360., 380., 400., 425., 450., 475., 500., 600., 700., 800., 1000., 1200., 1400., 1600., 2000., 2400.}; 
-  std::vector<double> recoilbins = {0.0, 200., 300., 400., 500., 600., 800., 1000., 1200., 1400., 1600.};
-  const double robsRecoilBinWidth = 75; //MeV
-  for(int whichBin = 0; whichBin < 20 + 1; ++whichBin) robsRecoilBins.push_back(robsRecoilBinWidth * whichBin);
+                      mehreenQ3Bins = {0.0, 0.2,0.3, 0.4, 0.6, 0.9, 1.2, 1.5, 2.0, 3.0},
+                      mehreenpmubins = {0.0, 0.5, 1.0, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 15, 20, 40},
+                     robsRecoilBins;
 
+
+  int nq3mbins = mehreenQ3Bins.size() -1;
+  std::vector<double> tpibins = {0, 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 46., 52.,60., 70., 80., 100., 125.,150., 175., 200., 225., 250., 275., 300., 325., 350., 400., 500., 700., 1000.};
+  std::vector<double> rangebins = {0, 4., 8., 12., 16., 20., 24., 28., 32., 36., 40., 44., 50., 56., 62., 70., 80.,90., 100., 110.,  120., 140., 160., 180., 200., 220., 240., 260., 280., 300., 325., 350., 375., 400., 450., 500., 550., 600., 650., 700., 800., 900., 1000., 1200., 1400., 1800., 2400.};
+  std::vector<double> recoilbins = {0.0, 200., 300., 400., 500., 600., 800., 1000., 1200., 1400., 1600.};
+  std::vector<double> recoilbins2 = {0.0, 150., 225., 300., 400., 500., 600., 700., 800., 900., 1000.}; //AvailableE bins 
+  const double robsRecoilBinWidth = 75; //MeV
+  for(int whichBin = 0; whichBin < 20 + 1; ++whichBin) robsRecoilBins.push_back(robsRecoilBinWidth * whichBin);  
+   
   std::vector<Variable*> vars = {
     new Variable("pTmu", "p_{T, #mu} [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue), //0
-    new Variable("q3", "q3 [GeV]", dansPTBins, &CVUniverse::Getq3, &CVUniverse::GetTrueQ3), //1
+    new Variable("q3", "q3 [GeV]", mehreenQ3Bins, &CVUniverse::Getq3, &CVUniverse::GetTrueQ3), //1
     new Variable("q2", "q2 [GeV^2]", dansPTBins, &CVUniverse::GetQ2Reco, &CVUniverse::GetTrueQ2GeV), //2
     new Variable("pzmu", "p_{||, #mu} [GeV/c]", dansPzBins, &CVUniverse::GetMuonPz, &CVUniverse::GetMuonPzTrue),//3
     new Variable("Emu", "E_{#mu} [GeV]", robsEmuBins, &CVUniverse::GetEmuGeV, &CVUniverse::GetElepTrueGeV),//4
-    new Variable("q3pTdiff","[GeV]", dansPTBins, &CVUniverse::Recoq3pTdiff, &CVUniverse::GetTrueq3pTdiff),//5
-    new Variable("NewEAvail", "NewEAvail", robsRecoilBins, &CVUniverse::NewEavail, &CVUniverse::GetTrueEAvail),//6 
-    new Variable("NewRecoilE", "NewRecoilE", robsRecoilBins, &CVUniverse::NewRecoilE, &CVUniverse::GetTrueQ0),//7
-    new Variable("NewEAvailvq0", "NewEavailvq0", robsRecoilBins, &CVUniverse::NewEavail,&CVUniverse::GetTrueQ0),//8
-    new Variable("pTmubins", "pTmuy", mehreenQ3Bins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue),//9
-    new Variable("NewEAvailbins", "NewEAvaily", recoilbins, &CVUniverse::NewEavail, &CVUniverse::GetTrueEAvail),//10
-    new Variable("NewRecoilEbins", "NewRecoilEy", recoilbins, &CVUniverse::NewRecoilE, &CVUniverse::GetTrueQ0),//11
-    new Variable("NewEAvailvq0bins", "NewEavailvq0y", recoilbins, &CVUniverse::NewEavail,&CVUniverse::GetTrueQ0),//12
-    new Variable("q3bins", "q3y", mehreenQ3Bins,&CVUniverse::Getq3, &CVUniverse::GetTrueQ3), //13
-    new Variable("Pmu", "pmu", mehreenpmubins, &CVUniverse::GetMuonP, &CVUniverse::GetPmuTrue)
- };
+    new Variable("LowTpi", "LowTpi", tpibins, &CVUniverse::GetZero, &CVUniverse::GetTrueLowestTpiEvent),
+    new Variable("AvailableE", "AvailableE", recoilbins2, &CVUniverse::NewEavail, &CVUniverse::GetTrueEAvail),//6 
+    new Variable("Pmu", "pmu", mehreenpmubins, &CVUniverse::GetMuonP, &CVUniverse::GetPmuTrue), //7
+    new Variable("pTmubins", "pTmuy", mehreenQ3Bins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue) //8
+   };
+  std::vector<Variable2D*> vars2D;
+  vars2D.push_back(new Variable2D(*vars[6], *vars[1]));// q3bins vs Eavail
+  vars2D.push_back(new Variable2D(*vars[6], *vars[8]));// pTbins vs Eavail
 
- std::vector<Variable2D*> vars2D;
- vars2D.push_back(new Variable2D(*vars[6], *vars[9])); //pTmubins(y) vs Eavail
- vars2D.push_back(new Variable2D(*vars[7], *vars[9])); //pTmubins(y) vs RecoilE
- vars2D.push_back(new Variable2D(*vars[1], *vars[9])); //pTmubins(y) vs q3
- vars2D.push_back(new Variable2D(*vars[3], *vars[9])); //pTmubins(y) vs pz
- vars2D.push_back(new Variable2D(*vars[2], *vars[9])); //pTmubins(y) vs q2
- vars2D.push_back(new Variable2D(*vars[6], *vars[10])); //Eavailbins(y) vs Eavail
- vars2D.push_back(new Variable2D(*vars[8], *vars[12])); //Eavailq0bins(y) vs Eavail
- vars2D.push_back(new Variable2D(*vars[7], *vars[11])); //RecoilEq0bins(y) vs RecoilE
- //vars2D.push_back(new Variable2D(*vars[6], *vars[13])); //q3bins(y) vs Eavail
- //vars2D.push_back(new Variable2D(*vars[7], *vars[13])); //q3bins(y) vs RecoilE
- //vars2D.push_back(new Variable2D(*vars[0], *vars[13])); //q3bins(y) vs pTmu
- //vars2D.push_back(new Variable2D(*vars[3], *vars[13])); //q3bins(y) vs pz
- //vars2D.push_back(new Variable2D(*vars[2], *vars[13])); //q3bins(y) vs q2
+  std::vector<Variable*> sidevars = vars; 
 
- std::vector<Variable*> sidevars = vars; 
-
- std::vector<Variable2D*> sidevars2D = vars2D;
+  std::vector<Variable2D*> sidevars2D = vars2D;
 
   std::vector<Study*> studies;
   std::vector<Study*> sideband_studies;
@@ -656,14 +637,14 @@ int main(const int argc, const char** argv)
   std::map<std::string, std::vector<CVUniverse*> > data_error_bands;
   data_error_bands["cv"] = data_band;
   
-  for(auto& var: vars) var->InitializeMCHists(error_bands, truth_bands);
-  for(auto& var: vars) var->InitializeDATAHists(data_band);
-  for(auto& var: vars2D) var->InitializeMCHists(error_bands, truth_bands);
-  for(auto& var: vars2D) var->InitializeDATAHists(data_band);
-  //for(auto& var: sidevars) var->InitializeDATAHists(data_band);
-  //for(auto& var: sidevars) var->InitializeMCHists(error_bands, truth_bands);
-  //for(auto& var: sidevars2D) var->InitializeMCHists(error_bands, truth_bands);
-  //for(auto& var: sidevars2D) var->InitializeDATAHists(data_band);  
+  //for(auto& var: vars) var->InitializeMCHists(error_bands, truth_bands);
+  //for(auto& var: vars) var->InitializeDATAHists(data_band);
+  //for(auto& var: vars2D) var->InitializeMCHists(error_bands, truth_bands);
+  //for(auto& var: vars2D) var->InitializeDATAHists(data_band);
+  for(auto& var: sidevars) var->InitializeDATAHists(data_band);
+  for(auto& var: sidevars) var->InitializeMCHists(error_bands, truth_bands);
+  for(auto& var: sidevars2D) var->InitializeMCHists(error_bands, truth_bands);
+  for(auto& var: sidevars2D) var->InitializeDATAHists(data_band);  
 
   // Loop entries and fill
   try
@@ -705,9 +686,9 @@ int main(const int argc, const char** argv)
     //std::cout << "Saving Histos to Data Files" << std::endl;
    
     //
-    for(auto& var: vars) var->WriteMC(*mcSideDir);
+    for(auto& var: sidevars) var->WriteMC(*mcSideDir);
     std::cout << "WRiting 2D VARS to event level file " << std::endl;
-    for(auto& var: vars2D) var->Write(*mcSideDir);
+    for(auto& var: sidevars2D) var->Write(*mcSideDir);
     std::cout << "Saving Histos to Data Files" << std::endl;
 
 

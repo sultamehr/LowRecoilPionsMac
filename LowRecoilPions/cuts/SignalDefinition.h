@@ -46,6 +46,42 @@ class hasTruePion: public PlotUtils::SignalConstraint<UNIVERSE>
     }
 };
 
+/*
+template <class UNIVERSE>
+class TrueWexpCut: public PlotUtils::SignalConstraint<UNIVERSE>
+{
+   public:
+      TrueWexpCut(): PlotUtils::SignalConstraint<UNIVERSE>("Wexp < 1.7")
+      {
+      }
+
+   private:
+      bool checkConstraint(const UNIVERSE& univ) const //override
+      {
+    	double wexp = univ.GetTrueWexp();
+        return wexp < 1.7;
+      }
+
+};
+
+template <class UNIVERSE>
+class TrueEavailCut: public PlotUtils::SignalConstraint<UNIVERSE>
+{  
+   public:
+      TrueEavailCut(): PlotUtils::SignalConstraint<UNIVERSE>("Available Energy < 2.0 GeV")
+      {
+      }
+   
+   private:
+      bool checkConstraint(const UNIVERSE& univ) const //override
+      {
+        double trueE = univ.GetTrueEAvail();
+        return trueE < 2.0;
+      }
+
+};
+*/
+
 template <class UNIVERSE>
 class pTRangeLimit: public PlotUtils::SignalConstraint<UNIVERSE>
 {

@@ -61,23 +61,41 @@ namespace truth
         return (truep > fpMin and truep < 20.0);
       }
   };
- 
+
+
   template <class UNIVERSE>
-  class EAvailCut: public PlotUtils::SignalConstraint<UNIVERSE>
+  class TrueWexpCut: public PlotUtils::SignalConstraint<UNIVERSE>
   {
-    public:
-      EAvailCut(const double EMax): PlotUtils::SignalConstraint<UNIVERSE>("True E Available < " + std::to_string(EMax) + " MeV"),
-      fEMax(EMax)
+   public:
+      TrueWexpCut(): PlotUtils::SignalConstraint<UNIVERSE>("Wexp < 1.7")
       {
       }
 
-    private:
-      double fEMax; // Max E Available allowed in MeV
+   private:
       bool checkConstraint(const UNIVERSE& univ) const //override
       {
-        double trueE = univ.GetTrueEAvail();
-        return (trueE > 0.0 and trueE < fEMax);
+        double wexp = univ.GetTrueWexp();
+        return wexp < 1.7;
       }
+
   };
 
-}   
+  template <class UNIVERSE>
+  class EavailCut: public PlotUtils::SignalConstraint<UNIVERSE>
+  {
+   public:
+      EavailCut(): PlotUtils::SignalConstraint<UNIVERSE>("Available Energy < 2.0 GeV")
+      {
+      }
+
+   private:
+      bool checkConstraint(const UNIVERSE& univ) const //override
+      {
+        double trueE = univ.GetTrueEAvail()/1000.;
+        if (trueE < 2.0) return true;
+	else return false;
+      }
+
+  };
+
+} 

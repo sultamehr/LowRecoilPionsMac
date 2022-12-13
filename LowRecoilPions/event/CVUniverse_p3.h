@@ -24,6 +24,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   #include "PlotUtils/MuonFunctions.h" // GetMinosEfficiencyWeight
   #include "PlotUtils/TruthFunctions.h" //Getq3True
   #include "PlotUtils/LowRecoilFunctions.h" // GetEAvailable()
+  
   // ========================================================================
   // Constructor/Destructor
   // ========================================================================
@@ -188,28 +189,6 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
     //return eavail;
     //return GetEAvailable();
    }
-
-
-  virtual double GetWExp() const {
-    double W = pow(M_p, 2.0) - GetQ2RecoMeV() +
-             2.0 * (M_p)*GetEHad();
-    W = W > 0 ? sqrt(W) : 0.0;
-    return W/1000.;
-  }
-  
-  virtual double GetTrueEHad() const{
-    return GetEnuTrue() - GetElepTrue();
-
-  }
-
-  virtual double GetTrueWexp() const {
-    double  W = pow(M_p, 2.0) -  GetTrueQ2MeV() +
-             2.0 * (M_p)*GetTrueEHad(); 
-
-    W = W > 0 ? sqrt(W) : 0.0;
-    return W/1000.;
-
-  }
  
   virtual double GetNoPolylineE() const{
 	return GetDouble("recoil_E_nopolyline");
@@ -231,42 +210,8 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   }
   
   virtual double GetEHad() const {
-     return GetCalRecoilE(); 
-  }
-
-  virtual double GetCalRecoilE() const{
-    const double calE = GetDouble("MasterAnaDev_hadron_recoil_default");
-    if (calE > 1000.){
-	return GetCalRecoilE_CCPiSPline();
-    }
-    else {
-        return GetCalRecoilE_Corrected();
-    }
-   
-  }
-
-  virtual double GetCalRecoilE_CCPiSPline() const{
-    return GetDouble("MasterAnaDev_hadron_recoil_two_track");
-
-  }
-
-  double GetCalRecoilE_Corrected() const {
-    double calE = GetDouble("MasterAnaDev_hadron_recoil_default");
-    double calE_corrected = calE; //make correction to this
-    std::vector<double> calE_bins = {0.0, 0.025e3, 0.05e3, 0.075e3, 0.1e3, 0.15e3, 0.2e3, 0.25e3, 0.3e3, 0.4e3, 0.5e3,0.6e3, 0.7e3,   0.8e3,  0.9e3,   1.0e3, 2.0e3};
-    const std::vector<double> corrections = {-0.060, -0.050, -0.210, -0.180,
-                                           -0.165, -0.180, -0.180, -0.180,
-                                           -0.195, -0.360, -0.400};
-    for (int i_bin = 0; i_bin < calE_bins.size() - 1; ++i_bin) {
-      if (((1e3) * calE_bins[i_bin] < calE) &&
-        (calE < (1e3) * calE_bins[i_bin + 1])) {
-        if (calE < 1000.) {
-          calE_corrected = calE - (1e3) * corrections[i_bin];
-          break;
-        }
-      }
-     }
-    return calE_corrected;
+    return GetDouble("MasterAnaDev_hadron_recoil_CCInc");
+  
   }
 
   virtual double Recoq3pTdiff() const{
@@ -282,7 +227,6 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
      return sqrt( (q3*q3) - (pT*pT));
 
   }
-
   /*
   virtual double GetRecoilESum() const {
      double ecal = GetDouble("blob_recoil_E_ecal");
@@ -333,7 +277,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   //}
   
   virtual double Getq3() const{
-    double eavail = GetEHad()/1000.;
+    double eavail = NewRecoilE()/1000.;
     double q2 = GetQ2Reco();
     //std::cout << " Dan's EHad is " << eavail << " Q2 is " << q2 << std::endl;
     double q3mec = sqrt(eavail*eavail + q2);
@@ -510,7 +454,8 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
       return npart;
  }
 
-    
+
+
  virtual double GetTrueLowestTpiEvent() const {
     double tpi = 999999.;
     int pdgsize = GetInt("mc_nFSPart");
@@ -527,8 +472,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
 	   // pion.SetPxPyPzE(momentumx, momentumy,momentumz, energy); 
            // double momentum = pion.P();
 	    double pionmass = TMath::Sqrt(pow(energy, 2) - pow(pionmomentum, 2));  
-	 
-            double KE = energy - 139.569; //pionmass;
+	    double KE = energy - pionmass;
 	    if (tpi > KE) tpi = KE;     
         }
     ///if(tpi < 99999.) std::cout << "Lowest Energy Primary Pion KE is " << tpi << std::endl;
@@ -536,14 +480,14 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
  } 
   
   virtual int GetTrueNPions() const{
-      return GetInt("FittedMichel_all_piontrajectory_pdg_sz");
+      return GetInt("truth_FittedMichel_all_piontrajectory_pdg_sz");
   }
 
   virtual int GetTrueNPiPlus() const{
 	int npiplus = 0;
 	int npi = GetTrueNPions();
 	for (int i = 0; i < npi; i++){
-	    int pdg = GetVecElem("FittedMichel_all_piontrajectory_pdg", i);
+	    int pdg = GetVecElem("truth_FittedMichel_all_piontrajectory_pdg", i);
 	    if (pdg == 211) npiplus++;
 	
 	}
@@ -551,19 +495,19 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   }
 
   virtual int GetPionParentID(int i) const {
-     return GetVecElem("FittedMichel_all_piontrajectory_ParentID", i);
+     return GetVecElem("truth_FittedMichel_all_piontrajectory_ParentID", i);
   }
 
   virtual int GetPionPDG(int i) const{
-     return GetVecElem("FittedMichel_all_piontrajectory_pdg", i);
+     return GetVecElem("truth_FittedMichel_all_piontrajectory_pdg", i);
   }
 
   virtual double GetPionE(int i) const{
-     return GetVecElem("FittedMichel_all_piontrajectory_energy",i)/pow(10,3);
+     return GetVecElem("truth_FittedMichel_all_piontrajectory_energy",i)/pow(10,3);
   }
 
   virtual double GetPionP(int i) const{
-    return GetVecElem("FittedMichel_all_piontrajectory_momentum", i)/pow(10,3);
+    return GetVecElem("truth_FittedMichel_all_piontrajectory_momentum", i)/pow(10,3);
   }
 
   virtual double GetPionMass(int i) const{
@@ -597,76 +541,18 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
      int nFSpi = GetTrueNPions();
      double pionKE = 9999.;
      for (int i = 0; i < nFSpi; i++){
-         int pdg = GetVecElem("FittedMichel_all_piontrajectory_pdg", i);
-         int pitrackid = GetVecElem("FittedMichel_all_piontrajectory_ParentID", i);
+         int pdg = GetVecElem("truth_FittedMichel_all_piontrajectory_pdg", i);
+         int pitrackid = GetVecElem("truth_FittedMichel_all_piontrajectory_ParentID", i);
 
-         double energy = GetVecElem("FittedMichel_all_piontrajectory_energy",i);
-         double p = GetVecElem("FittedMichel_all_piontrajectory_momentum", i);
-         double mass = 139.569;
+         double energy = GetVecElem("truth_FittedMichel_all_piontrajectory_energy",i);
+         double p = GetVecElem("truth_FittedMichel_all_piontrajectory_momentum", i);
+         double mass = sqrt(pow(energy,2) - pow(p, 2));
          double tpi = energy - mass;
          if (tpi <= pionKE) pionKE = tpi;
       }
        
       return pionKE;
    }
-
-  virtual double GetTrueHighTpi() const {
-     int nFSpi = GetTrueNPions();
-     double pionKE = 0.0;
-     for (int i = 0; i < nFSpi; i++){
-          int pdg = GetVecElem("mc_FSPartPDG",i);
-	  if(pdg != 211) continue;
-	  double energy = GetVecElem("mc_FSPartE", i);
-          double mass = 139.569;
-          double tpi = energy - mass;
-          if (tpi >= pionKE) pionKE = tpi;
-      }   
-         
-      return pionKE;
-   }
-
- virtual int GetTrueIdxHighTpi() const {
-     int nFSpi = GetTrueNPions();
-     int idx = -9999;
-     double pionKE = 0.0;
-     for (int i = 0; i < nFSpi; i++){
- 	 int pdg = GetVecElem("mc_FSPartPDG",i);
-         if(pdg != 211) continue; 
-         double energy = GetVecElem("mc_FSPartE", i);
-	 double mass = 139.569;
-         double tpi = energy - mass;
-         if (tpi >= pionKE) {
-		pionKE = tpi;
-         	idx = i;
-	 }
-      }   
-          
-      return idx;
- }
-
-
- virtual double GetTrueAngleHighTpi() const {
-     int nFSpi = GetTrueNPions();
-     double angle = -9999.; //WRTbeam and in degrees
-     double pionKE = 0.0;
-     int idk = -9999;
-     for (int i = 0; i < nFSpi; i++){
-         int pdg = GetVecElem("mc_FSPartPDG",i);
-         if(pdg != 211) continue; 
-         double energy = GetVecElem("mc_FSPartE", i);
-         double mass = 139.569;
-         double tpi = energy - mass;
-         if (tpi >= pionKE) {
-               pionKE = tpi;
-               TVector3 pimomentumvec(GetVecElem("mc_FSPartPx", i), GetVecElem("mc_FSPartPz", i),GetVecElem("mc_FSPartPz", i));
-               double deg_wrtb = thetaWRTBeam(pimomentumvec.X(), pimomentumvec.Y(), pimomentumvec.Z()); //rad
- 	       angle = deg_wrtb*180./M_PI;
-         }
-      }  
-
-      return angle;
- }
-
  virtual void PrintTrueArachneLink() const {
   int link_size = 200;
   char link[link_size];
@@ -674,8 +560,6 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   int subrun = GetInt("mc_subrun");
   int gate = GetInt("mc_nthEvtInFile") + 1;
   int slice = GetVecElem("slice_numbers", 0);
-  double blobEOD = GetDouble("blob_recoil_E_od");
-
   sprintf(link,
           "https://minerva05.fnal.gov/Arachne/"
           "arachne.html\?det=SIM_minerva&recoVer=v21r1p1&run=%d&subrun=%d&gate="
@@ -684,13 +568,10 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
        	  std::cout << link << std::endl;
        	  std::cout << "Lepton E: " <<  GetElepTrueGeV() << " Run " << run << "/"<<subrun << "/" << gate << "/" << slice << std::endl;
 	  std::cout << "Printing Available Energy " << NewEavail() << std::endl;
-	  std::cout << "Printing True Available Energy " << GetTrueEAvail() << std::endl; 
 	  std::cout << "Muon P: " << GetMuonP() << std::endl;
 	  std::cout << "Get Muon Pt: " << GetMuonPT() << std::endl;
 	  std::cout << "Get Muon Pz: " << GetMuonPz() << std::endl;
 	  std::cout << "Get Muon PT True " << GetMuonPTTrue() << std::endl;
- 	  std::cout << "Get Blob E OD " << blobEOD << std::endl; 
-	
  }
 
  virtual void PrintDataArachneLink() const {
@@ -716,7 +597,8 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
  virtual double GetClusterEnergyTracker() const
  {
     int nclusters = GetInt("cluster_view_sz");
-    double totenergy = 0.0;
+    double totenergy = GetDouble("cluster_trackerEsum"); //0.0;
+    /*
     for (int i = 0; i < nclusters; i++){
 	int ismuon = GetVecElemInt("cluster_isMuontrack", i);
 	if (ismuon != 0) continue;
@@ -731,13 +613,15 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
         if (timediff < -20. || timediff > 30.) continue;
         totenergy += ecal;     
     }
+    */
     return totenergy;
  }
 
  virtual double GetClusterEnergyECAL() const
  {
-    double totenergy = 0.0;
+    double totenergy = GetDouble("cluster_ecalEsum");//0.0;
     int nclusters = GetInt("cluster_view_sz"); 
+    /*
     for (int i = 0; i < nclusters; i++){
  	int ismuon = GetVecElemInt("cluster_isMuontrack", i);
 	if (ismuon != 0) continue;
@@ -752,6 +636,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
         //if (ismuon !=0) continue; // check to make sure cluster is not on muon track, 0 is not muon, 1 is muon
         totenergy += ecal;
     }
+    */
     return totenergy;
  }
  
@@ -783,10 +668,10 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
 
  virtual double NewEavail() const
  {
-    double recoiltracker =  GetDouble("blob_recoil_E_tracker") -  GetTrackerMuFuzz(); 
-    //double recoiltracker = GetClusterEnergyTracker() - GetTrackerMuFuzz();
-    double recoilEcal = GetDouble("blob_recoil_E_ecal") - GetECALMuFuzz();
-    //double recoilEcal = GetClusterEnergyECAL() - GetECALMuFuzz();
+    //double recoiltracker =  GetDouble("blob_recoil_E_tracker") -  GetTrackerMuFuzz(); 
+    double recoiltracker = GetClusterEnergyTracker() - GetTrackerMuFuzz();
+    //double recoilEcal = GetDouble("blob_recoil_E_ecal") - GetECALMuFuzz();
+    double recoilEcal = GetClusterEnergyECAL() - GetECALMuFuzz();
     const double Eavailable_scale = 1.17;
     double eavail = recoiltracker + recoilEcal;
     return eavail*Eavailable_scale;
