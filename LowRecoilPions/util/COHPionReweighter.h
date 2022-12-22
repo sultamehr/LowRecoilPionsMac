@@ -29,12 +29,8 @@ namespace PlotUtils
       virtual double GetWeight(const UNIVERSE& univ, const EVENT& myevent /*event*/) const override{
 	if( univ.GetInt("mc_intType") == 4){
 	   
- 	    int npi = univ.GetTrueNPionsinEvent();
-	    if (npi == 0) return 1.0; 
-	    double angle = univ.GetTrueAngleHighTpi(); 
-	    double KE = univ.GetTrueHighTpi();
- 	    //double weight = GetCoherentPiWeight(angle, KE); //PlotUtils::weightCoherentPi().get_combined_weight(angle, KE);
-            //return weight;
+ 	    double weight = univ.GetCOHPionWeight();//GetCoherentPiWeight(angle, KE); //PlotUtils::weightCoherentPi().get_combined_weight(angle, KE);
+            return weight;
 	 }
          else return 1.0;
 

@@ -257,6 +257,7 @@ void LoopAndFillEventSelection(
                 (*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
                 var->FillCategHistos(*universe,var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
                 //var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight2);
+                /*
                 double recoX = var->GetRecoValueX(*universe);
                 double truevarX = var->GetTrueValueX(*universe);
                 double recomtrueX = recoX - truevarX;
@@ -267,6 +268,7 @@ void LoopAndFillEventSelection(
                 var->biasMCReco->FillUniverse(universe,bias,var->GetRecoValueY(*universe), weight2);
                 var->recoMinusTrueRBins->FillUniverse(universe, recomtrueX, var->GetRecoValueY(*universe), weight2);
                 var->recoMinusTrueTBins->FillUniverse(universe, recomtrueX, var->GetTrueValueY(*universe), weight2);
+                */
            }  // End of Side 2D vars loop
              //for(auto& study: sideband_studies) study->SelectedSignal(*universe, myevent, weight2);
 	   const bool isSignal = michelcuts.isSignal(*universe, weight2); 
@@ -283,7 +285,19 @@ void LoopAndFillEventSelection(
                 var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight2);
             }
            } // end of if Signal()
- 	 // } // End of If Sideband == 1
+ 	   else if (!isSignal){
+                        int bkgd_ID = -1;
+                        if (universe->GetCurrent()==2)bkgd_ID=0;
+                        else if( universe->GetCurrent()==1) bkgd_ID=1;
+
+
+                        for(auto& var: vars){
+
+                                (*var->m_backgroundHists)[bkgd_ID].FillUniverse(universe, var->GetRecoValue(*universe), weight2);
+                        }
+                        for(auto& var: vars2D) (*var->m_backgroundHists)[bkgd_ID].FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
+           }
+         // } // End of If Sideband == 1
         //} // end of else if (!cutResults[0] && evt.sideband == 1) // To fill Sideband Variables
        } // If event passes PreCuts
       } // End band's universe loop
@@ -515,7 +529,7 @@ int main(const int argc, const char** argv)
   PlotUtils::MinervaUniverse::SetNuEConstraint(true);
   PlotUtils::MinervaUniverse::SetPlaylist(options.m_plist_string); //TODO: Infer this from the files somehow?
   PlotUtils::MinervaUniverse::SetAnalysisNuPDG(14);
-  PlotUtils::MinervaUniverse::SetNFluxUniverses(100);
+  PlotUtils::MinervaUniverse::SetNFluxUniverses(2); // Set to 100 later 
   PlotUtils::MinervaUniverse::SetZExpansionFaReweight(false);
 
   //Now that we've defined what a cross section is, decide which sample and model
@@ -572,7 +586,7 @@ int main(const int argc, const char** argv)
   MnvTunev1.emplace_back(new PlotUtils::MINOSEfficiencyReweighter<CVUniverse, MichelEvent>());
   MnvTunev1.emplace_back(new PlotUtils::RPAReweighter<CVUniverse, MichelEvent>());
   //TODO: Add my pion reweighter here. - Mehreen S.  Nov 22, 2021
-  MnvTunev1.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>()); 
+  //MnvTunev1.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>()); 
   PlotUtils::Model<CVUniverse, MichelEvent> model(std::move(MnvTunev1));
 
   // Make a map of systematic universes

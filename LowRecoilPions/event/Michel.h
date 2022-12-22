@@ -159,48 +159,46 @@ Michel::Michel(const CVUniverse& univ, int ci)
   nclusters = univ.GetInt("cluster_view_sz");
   //nclusters = univ.GetInt("FittedMichel_cluster_view_sz");	
   overlay_fraction = univ.GetVecElem("FittedMichel_michel_datafraction", ci); 
- 
-  true_initialx = univ.GetVecElem("FittedMichel_reco_micheltrajectory_initialx", ci);
-  true_initialy = univ.GetVecElem("FittedMichel_reco_micheltrajectory_initialy", ci);
-  true_initialz = univ.GetVecElem("FittedMichel_reco_micheltrajectory_initialz", ci);
-  is_overlay = univ.GetVecElem("FittedMichel_michel_isoverlay", ci); 
-  true_e = univ.GetVecElem("FittedMichel_reco_micheltrajectory_energy", ci);
-  true_pdg = univ.GetVecElemInt("FittedMichel_reco_micheltrajectory_pdg", ci);
-  true_parentpdg = univ.GetVecElemInt("FittedMichel_true_primaryparent_pdg", ci);
-  true_parentid = univ.GetVecElemInt("FittedMichel_true_primaryparent_trackID", ci); 
-  true_p = univ.GetVecElem("FittedMichel_reco_micheltrajectory_momentum", ci);
+
+  if (univ.IsTruth()){ 
+   true_initialx = univ.GetVecElem("truth_FittedMichel_reco_micheltrajectory_initialx", ci);
+   true_initialy = univ.GetVecElem("truth_FittedMichel_reco_micheltrajectory_initialy", ci);
+   true_initialz = univ.GetVecElem("truth_FittedMichel_reco_micheltrajectory_initialz", ci);
+   is_overlay = univ.GetVecElem("FittedMichel_michel_isoverlay", ci); 
+   true_e = univ.GetVecElem("truth_FittedMichel_reco_micheltrajectory_energy", ci);
+   true_pdg = univ.GetVecElemInt("truth_FittedMichel_reco_micheltrajectory_pdg", ci);
+   true_parentpdg = univ.GetVecElemInt("truth_FittedMichel_true_primaryparent_pdg", ci);
+   true_parentid = univ.GetVecElemInt("truth_FittedMichel_true_primaryparent_trackID", ci); 
+   true_p = univ.GetVecElem("truth_FittedMichel_reco_micheltrajectory_momentum", ci);
   
-  double true_parentp = univ.GetVecElem("FittedMichel_true_primaryparent_momentum", ci);
-  double true_parente = univ.GetVecElem("FittedMichel_true_primaryparent_energy", ci);
-  double mass = mass = sqrt(pow(true_parente,2) - pow(true_parentp, 2));
-  pionKE = true_parente - mass;
+   double true_parentp = univ.GetVecElem("truth_FittedMichel_true_primaryparent_momentum", ci);
+   double true_parente = univ.GetVecElem("truth_FittedMichel_true_primaryparent_energy", ci);
+   double mass = mass = sqrt(pow(true_parente,2) - pow(true_parentp, 2));
+   pionKE = true_parente - mass;
   
-  double true_parentpx = univ.GetVecElem("FittedMichel_true_primaryparent_momentumx", ci);
-  double true_parentpy = univ.GetVecElem("FittedMichel_true_primaryparent_momentumy", ci);
-  double true_parentpz = univ.GetVecElem("FittedMichel_true_primaryparent_momentumz", ci);
+   double true_parentpx = univ.GetVecElem("truth_FittedMichel_true_primaryparent_momentumx", ci);
+   double true_parentpy = univ.GetVecElem("truth_FittedMichel_true_primaryparent_momentumy", ci);
+   double true_parentpz = univ.GetVecElem("truth_FittedMichel_true_primaryparent_momentumz", ci);
   
-  TVector3 truep(true_parentpx, true_parentpy, true_parentpz);
-  double true_theta = truep.Theta();
-  true_angle = true_theta;//*TMath::RadToDeg();
-  
+   TVector3 truep(true_parentpx, true_parentpy, true_parentpz);
+   double true_theta = truep.Theta();
+   true_angle = true_theta;//*TMath::RadToDeg();
+
+   //if (overlay_fraction < 0.5) std::cout << "True Parent of Michel is PDG: " <<  true_parentpdg <<  " And Parent trackID: "  << true_parentid << std::endl;
+   double end1diff = abs(true_initialz - m_z1); // This gives a value for determining how close the reconstructed endpoint of the michel is to the true intial endpoint (the start point of where the michel decayed from) 
+   double end2diff = abs(true_initialz - m_z2); // this is for endpoint 2. If you compare this to the endpoint that gets matched to a verted or cluster, you can determine which type of match ends up getting correcct matches or wrong matches. 
   
 
 
-  //if (overlay_fraction < 0.5) std::cout << "True Parent of Michel is PDG: " <<  true_parentpdg <<  " And Parent trackID: "  << true_parentid << std::endl;
-  double end1diff = abs(true_initialz - m_z1); // This gives a value for determining how close the reconstructed endpoint of the michel is to the true intial endpoint (the start point of where the michel decayed from) 
-  double end2diff = abs(true_initialz - m_z2); // this is for endpoint 2. If you compare this to the endpoint that gets matched to a verted or cluster, you can determine which type of match ends up getting correcct matches or wrong matches. 
-  
-
-
-  if (overlay_fraction > 0.5) trueEndpoint = 0;
-  else if (true_parentpdg == 211 && end1diff < end2diff) trueEndpoint = 1;
-  else if (true_parentpdg == 211 && end2diff < end1diff) trueEndpoint = 2; 
-  
+   if (overlay_fraction > 0.5) trueEndpoint = 0;
+   else if (true_parentpdg == 211 && end1diff < end2diff) trueEndpoint = 1;
+   else if (true_parentpdg == 211 && end2diff < end1diff) trueEndpoint = 2; 
+  }
   if (is_fitted == 1) { // Do theMatching for Fitted Michels
        DoesMichelMatchVtx(univ); //GEts info for Vtx Match
        DoesMichelMatchClus(univ); // Gets info for ClusterMatch
-       GetBestMatch(); // For each Michel, identifies the best Michel match. Categorizes the michel as a cluster or vertex match.     
-       GetPionAngle(univ); //Calculate the reco estimate of pion angle using Matched michel endpoint from GetBestMatch function.
+       GetBestMatch();     
+       GetPionAngle(univ);
   }
 
    
@@ -299,7 +297,95 @@ void Michel::GetBestMatch(){
      else if (distances[1] == this->up_clus_michel_dist3D) this->SecondBestMatch == 3;
      else if (distances[1] == this->down_clus_michel_dist3D) this->SecondBestMatch == 4;
      else {this->SecondBestMatch == 0;}
-     //std::cout << "The Best Match for this Michel is " << this->BestMatch << std::endl; 
+     /*
+     if (upvtxmatch == 1 && (upclusmatch == 1 || downclusmatch == 1 )){
+        if (this->up_to_vertex_dist3D < this->up_clus_michel_dist3D) {
+           //std::cout << "UPVTX IS BEST " << std::endl;
+           this->best_XZ = this->up_to_vertex_XZ;
+           this->best_UZ = this->up_to_vertex_UZ;
+           this->best_VZ = this->up_to_vertex_VZ;
+           this->BestMatch = 1;
+           this->Best3Ddist = this->up_to_vertex_dist3D;
+        }
+        else if (this->up_to_vertex_dist3D >= this->up_clus_michel_dist3D)
+        {
+           //std::cout << "UPCLUS IS BEST " << std::endl; 
+           this->BestMatch = 3;
+           this->best_XZ = this->up_to_clus_XZ;
+           this->best_UZ = this->up_to_clus_VZ;
+           this->best_VZ = this->up_to_clus_UZ;
+           this->Best3Ddist = this->up_clus_michvtx_dist3D;
+        }
+        else if (this->up_to_vertex_dist3D < this->down_clus_michel_dist3D) {
+           //std::cout << "UPVTX IS BEST " << std::endl;
+           this->BestMatch = 1;
+           this->Best3Ddist = this->up_to_vertex_dist3D;
+           this->best_XZ = this->up_to_vertex_XZ;
+           this->best_UZ = this->up_to_vertex_UZ;
+           this->best_VZ = this->up_to_vertex_VZ;
+        }
+        else if (this->up_to_vertex_dist3D >= this->down_clus_michel_dist3D)
+        {
+           //std::cout << "DOWNCLUSISBEST" << std::endl;
+           this->BestMatch = 4;
+           this->Best3Ddist = this->down_clus_michvtx_dist3D;
+           this->best_XZ = this->down_to_clus_XZ;
+           this->best_UZ = this->down_to_clus_UZ;
+           this->best_VZ = this->down_to_clus_VZ;
+        }
+     }
+     else if (downvtxmatch == 1 && (upclusmatch == 1 || downclusmatch == 1 )){
+       if (this->down_to_vertex_dist3D < this->up_clus_michel_dist3D) {
+           //std::cout << "DOWNVTX IS BEST " << std::endl;
+
+           this->BestMatch = 2;
+           this->best_XZ = this->down_to_vertex_XZ;
+           this->best_UZ = this->down_to_vertex_UZ;
+           this->best_VZ = this->down_to_vertex_VZ;     
+           this->Best3Ddist = this->down_to_vertex_dist3D;
+
+       }
+       else if (this->down_to_vertex_dist3D >= this->up_clus_michel_dist3D)
+       {
+           //std::cout << "UPCLUS IS BEST " << std::endl;
+           this->BestMatch = 3;
+           this->Best3Ddist = this->up_clus_michvtx_dist3D;
+           this->best_XZ = this->up_to_clus_XZ;
+           this->best_UZ = this->up_to_clus_UZ;
+           this->best_VZ = this->up_to_clus_VZ;
+       }
+       else if (this->down_to_vertex_dist3D < this->down_clus_michel_dist3D)
+       {        
+           //std::cout << "DOWNVTX IS BEST " << std::endl;
+
+           this->BestMatch = 2;
+           this->best_XZ = this->down_to_vertex_XZ;
+           this->best_UZ = this->down_to_vertex_UZ;
+           this->best_VZ = this->down_to_vertex_VZ;   
+           //std::cout << "Setting Best Dist" << std::endl;
+           this->Best3Ddist = this->down_to_vertex_dist3D;
+
+       }
+       else if (this->down_to_vertex_dist3D >= this->down_clus_michel_dist3D)
+       {
+       
+           //std::cout << "DOWNCLUSISBEST" << std::endl;
+           this->BestMatch = 4;
+           this->Best3Ddist = this->up_clus_michvtx_dist3D;
+	   this->best_XZ = this->down_to_clus_XZ;
+           this->best_UZ = this->down_to_clus_UZ;
+           this->best_VZ = this->down_to_clus_VZ;
+       }
+     
+     }*/
+     //else{
+     // this->BestMatch = 0; 
+     // this->Best3Ddist = 9999.;
+     // this->best_XZ = 9999.;
+     // this->best_UZ = 9999.;
+     // this->best_VZ = 9999.;
+     // }
+ //    std::cout << "The Best Match for this Michel is " << this->BestMatch << std::endl; 
      int matchtype = this->BestMatch; 
      // Identifying the best reco endpoint based on the Best MAtch type.
      if (matchtype == 1 || matchtype == 3) this->recoEndpoint = 1;
@@ -446,6 +532,18 @@ void Michel::DoesMichelMatchClus(const CVUniverse& univ){
   const double minZ = 5980, maxZ = 8422; 
   for (int i = 0; i < nclusters; i++){
 
+    /*
+    Cluster current_cluster = Cluster(univ, i);
+
+    double energy = current_cluster.energy;
+    double time = current_cluster.time;  
+    double pos = current_cluster.pos;   
+    double zpos = current_cluster.zpos;  
+    int view = current_cluster.view;
+    double timediff = micheltime - time;
+    int ismuon = current_cluster.ismuon;
+    */
+
 
     double energy = univ.GetVecElem("cluster_energy", i);
     double time = univ.GetVecElem("cluster_time", i) / pow(10, 3);  
@@ -455,13 +553,13 @@ void Michel::DoesMichelMatchClus(const CVUniverse& univ){
     double timediff = micheltime - time;
     int ismuon = univ.GetVecElem("cluster_isMuontrack", i);
     
-    if (ismuon !=0) continue; // check to make sure cluster is not on muon track, 0 is non-muon, 1 is muon
+    if (ismuon !=0) continue; // check to make sure cluster is not on muon track, 0 is muon, 1 isnot muon
 
     if (energy < 2.) continue; // only get clusters greater than 2 MeV
     
     if (timediff < 0.) continue;
     //if (zpos < minZ || zpos > maxZ) continue; //Require the matched clusters also be in tracker  TODO: July 20, 2022 - Change if Kevin says this doesnt make sense 
-    if (zpos <  5980. || zpos > 9038.) continue; // Making sure cluster is in tracker or ECAL 
+    if (zpos <  5980) continue; 
     //std::cout << "printing cluster info " << "energy " << energy << " time " << time << " pos " << pos << " zpos " << zpos << std::endl;
 
     double zdiff1 = abs(zpos - michelz1);
@@ -551,6 +649,17 @@ void Michel::DoesMichelMatchClus(const CVUniverse& univ){
  std::vector<double> clusv2;
  for (int i = 0; i < nclusters; i++){
 
+    /*
+    Cluster current_cluster = Cluster(univ, i);
+    
+    double energy = current_cluster.energy;
+    double time = current_cluster.time;  
+    double pos = current_cluster.pos;   
+    double zpos = current_cluster.zpos;  
+    int view = current_cluster.view;
+    double timediff = micheltime - time;
+    double ismuon = current_cluster.ismuon;
+    */
     double energy = univ.GetVecElem("cluster_energy", i);
     double time = univ.GetVecElem("cluster_time", i) / pow(10, 3);  
     double pos = univ.GetVecElem("cluster_pos", i);  
@@ -559,13 +668,10 @@ void Michel::DoesMichelMatchClus(const CVUniverse& univ){
     double timediff = micheltime - time;
     int ismuon = univ.GetVecElem("cluster_isMuontrack", i);
 
-    if (ismuon != 0) continue; // Checking to see if Cluster is on Muon Track or not. 0 is off. 1 is on. 
+    if (ismuon != 0) continue; // Checking to see if Cluster is on Muon Track or not. 0 is on. 1 is not. 
     if (energy < 2.) continue;
  //   std::cout << "Printing details about cluster "<< i << " : "  << energy << " : " << time << " : " << pos << " : " << zpos << " : " << view << " : " << timediff << std::endl;  
-    if (timediff < 0.) continue;
-
-    if (zpos < 5980 || zpos > 9038) continue;
- 
+    if (timediff < 0.) continue; 
     double zdiff1 = abs(zpos - michelz1);
     double zdiff2 = abs(zpos - michelz2);
     

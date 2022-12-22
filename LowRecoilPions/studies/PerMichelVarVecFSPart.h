@@ -93,8 +93,12 @@ class PerMichelVarVecFSPart: public Study
     //All of your plots happen here so far.
     void fillSelectedSignal(const CVUniverse& univ, const MichelEvent& evt, const double weight)
     {
+      std::cout << "Printing Universe Name: " << univ.ShortName() << std::endl;
+      std::cout << " Pinrting N Michels " << evt.m_nmichels.size() << std::endl;
+      
       for(size_t whichMichel = 0; whichMichel < evt.m_nmichels.size(); ++whichMichel)
       {
+        //std::cout << "Printing Universe Name: " << univ.ShortName() << std::endl;
         (*totalMCHist).FillUniverse(&univ, fReco(univ, evt, whichMichel), weight);
      //   (*m_VarToGENIELabel)[univ.GetInteractionType()].FillUniverse(&univ, fReco(univ, evt, whichMichel), weight);    
         const auto pionCat = std::find_if(pionFSCategories.begin(), pionFSCategories.end(), [&univ](auto& category) { return (*category)(univ); });

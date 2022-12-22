@@ -142,7 +142,7 @@ void LoopAndFillEventSelection(
     cvUniv->SetEntry(i);
     model.SetEntry(*cvUniv, cvEvent);
     const double cvWeight =model.GetWeight(*cvUniv, cvEvent);// TODO: Put this model weight back. model.GetWeight(*cvUniv, cvEvent);
-
+    michelcuts.isMCSelected(*cvUniv, cvEvent, cvWeight); 
     //=========================================
     // Systematics loop(s)
     //=========================================
@@ -156,6 +156,7 @@ void LoopAndFillEventSelection(
         //if (universe->ShortName() != "cv") continue;
         // Tell the Event which entry in the TChain it's looking at
         universe->SetEntry(i);
+        if(universe->IsVerticalOnly()) myevent = cvEvent;
         const double weight2 = model.GetWeight(*universe, myevent); 
         const auto cutResults = michelcuts.isMCSelected(*universe, myevent, cvWeight);
         //const auto cutResults = michelcuts.isDataSelected(*universe, myevent);       
@@ -386,7 +387,7 @@ int main(const int argc, const char** argv)
   PlotUtils::MinervaUniverse::SetNuEConstraint(true);
   PlotUtils::MinervaUniverse::SetPlaylist(options.m_plist_string); //TODO: Infer this from the files somehow?
   PlotUtils::MinervaUniverse::SetAnalysisNuPDG(14);
-  PlotUtils::MinervaUniverse::SetNFluxUniverses(100);
+  PlotUtils::MinervaUniverse::SetNFluxUniverses(2);
   PlotUtils::MinervaUniverse::SetZExpansionFaReweight(false);
 
   //Now that we've defined what a cross section is, decide which sample and model

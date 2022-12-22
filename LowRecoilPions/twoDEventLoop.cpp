@@ -188,17 +188,17 @@ void LoopAndFillEventSelection(
                 	(*var->m_MChists)[universe->GetInteractionType()].FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
                 	var->FillCategHistos(*universe,var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight2);
                 	var->mc_trueHist->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight2);
-                        double recoX = var->GetRecoValueX(*universe);
-                	double truevarX = var->GetTrueValueX(*universe);
-                	double recomtrueX = recoX - truevarX;
-                	double recoY = var->GetRecoValueY(*universe);
-                	double truevarY = var->GetTrueValueY(*universe);
-                	double recomtrueY = recoY - truevarY;
-                	double bias = recomtrueX/truevarX;
-   			var->biasMCReco->FillUniverse(universe,bias,var->GetRecoValueY(*universe), weight2);
+                        //double recoX = var->GetRecoValueX(*universe);
+                	//double truevarX = var->GetTrueValueX(*universe);
+                	//double recomtrueX = recoX - truevarX;
+                	//double recoY = var->GetRecoValueY(*universe);
+                	//double truevarY = var->GetTrueValueY(*universe);
+                	//double recomtrueY = recoY - truevarY;
+                	//double bias = recomtrueX/truevarX;
+   			//var->biasMCReco->FillUniverse(universe,bias,var->GetRecoValueY(*universe), weight2);
 
-			var->recoMinusTrueRBins->FillUniverse(universe, recomtrueX, var->GetRecoValueY(*universe), weight2);
-                	var->recoMinusTrueTBins->FillUniverse(universe, recomtrueX, var->GetTrueValueY(*universe), weight2);
+			//var->recoMinusTrueRBins->FillUniverse(universe, recomtrueX, var->GetRecoValueY(*universe), weight2);
+                	//var->recoMinusTrueTBins->FillUniverse(universe, recomtrueX, var->GetTrueValueY(*universe), weight2);
          	}
 
         	//for(auto& study: studies) study->SelectedSignal(*universe, myevent, weight2);
@@ -322,7 +322,12 @@ void LoopAndFillEffDenom( PlotUtils::ChainWrapper* truth,
     //std::cout << " Setting CV univ Entry " << i << std::endl;
     model.SetEntry(*cvUniv, cvEvent);
     //std::cout << "Getting CV Weight " << std::endl;
+  
     const double cvWeight = model.GetWeight(*cvUniv, cvEvent);
+
+    //const auto cutResults = michelcuts.isEfficiencyDenom(*cvUniv, cvEvent, cvWeight);
+ 
+
     //std::cout << "CV Weight is " << cvWeight << std::endl;
     //=========================================
     // Systematics loop(s)
@@ -459,7 +464,7 @@ int main(const int argc, const char** argv)
   PlotUtils::MinervaUniverse::SetNuEConstraint(true);
   PlotUtils::MinervaUniverse::SetPlaylist(options.m_plist_string); //TODO: Infer this from the files somehow?
   PlotUtils::MinervaUniverse::SetAnalysisNuPDG(14);
-  PlotUtils::MinervaUniverse::SetNFluxUniverses(10); // TODO: CHANGE TO 100 later. For now, testing with no flux systematics. 
+  PlotUtils::MinervaUniverse::SetNFluxUniverses(2); // TODO: CHANGE TO 100 later. For now, testing with no flux systematics. 
   PlotUtils::MinervaUniverse::SetZExpansionFaReweight(false);
  
   //For MnvTunev4.3.1 - Aaron's Tune we need the following:
@@ -520,13 +525,14 @@ int main(const int argc, const char** argv)
   PlotUtils::Cutter<CVUniverse, MichelEvent> mycuts(std::move(preCuts), std::move(sidebands) , std::move(signalDefinition),std::move(phaseSpace));
   
   std::vector<std::unique_ptr<PlotUtils::Reweighter<CVUniverse, MichelEvent>>> MnvTunev1;
+  
   MnvTunev1.emplace_back(new PlotUtils::FluxAndCVReweighter<CVUniverse, MichelEvent>());
   MnvTunev1.emplace_back(new PlotUtils::GENIEReweighter<CVUniverse, MichelEvent>(true, false));
   MnvTunev1.emplace_back(new PlotUtils::LowRecoil2p2hReweighter<CVUniverse, MichelEvent>());
   MnvTunev1.emplace_back(new PlotUtils::MINOSEfficiencyReweighter<CVUniverse, MichelEvent>());
   MnvTunev1.emplace_back(new PlotUtils::RPAReweighter<CVUniverse, MichelEvent>());
   //TODO: Add my pion reweighter here. - Mehreen S.  Nov 22, 2021
-  MnvTunev1.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>()); 
+  //MnvTunev1.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>()); 
   PlotUtils::Model<CVUniverse, MichelEvent> model(std::move(MnvTunev1));
   //
   
@@ -542,7 +548,7 @@ int main(const int argc, const char** argv)
   MnvTunev4.emplace_back(new PlotUtils::DiffractiveReweighter<CVUniverse, MichelEvent>());
   MnvTunev4.emplace_back(new PlotUtils::GeantNeutronCVReweighter<CVUniverse, MichelEvent>());
   MnvTunev4.emplace_back(new PlotUtils::FSIReweighter<CVUniverse, MichelEvent>(true, true)); 
-  //MnvTunev4.emplace_back(new PlotUtils::COHPionReweighter<CVUniverse, MichelEvent>());
+  MnvTunev4.emplace_back(new PlotUtils::COHPionReweighter<CVUniverse, MichelEvent>());
   MnvTunev4.emplace_back(new PlotUtils::TargetMassReweighter<CVUniverse, MichelEvent>()); 
   //MnvTunev4.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>());
   PlotUtils::Model<CVUniverse, MichelEvent> model(std::move(MnvTunev4));
@@ -597,7 +603,7 @@ int main(const int argc, const char** argv)
     new Variable("LowTpi", "LowTpi", tpibins, &CVUniverse::GetZero, &CVUniverse::GetTrueLowestTpiEvent), 
     new Variable("AvailableE", "AvailableE", recoilbins2, &CVUniverse::NewEavail, &CVUniverse::GetTrueEAvail),//6 
     new Variable("Pmu", "pmu", mehreenpmubins, &CVUniverse::GetMuonP, &CVUniverse::GetPmuTrue), //7
-    new Variable("pTmubins", "pTmuy", mehreenQ3Bins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue), //8
+    new Variable("pTmubins", "pTmubins", mehreenQ3Bins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue), //8
     //new Variable("EHadronic", "EHadronic", recoilbins2, &CVUniverse::GetEHad, &CVUniverse::GetTrueEHad), // 9
     //new Variable("Wexp", "Wexp", wexpbins, &CVUniverse::GetWExp, &CVUniverse::GetTrueWexp), //10
     new Variable("q3bins", "q3bins", dansPTBins,  &CVUniverse::Getq3, &CVUniverse::GetTrueQ3) //11
@@ -618,7 +624,7 @@ int main(const int argc, const char** argv)
  vars2D.push_back(new Variable2D(*vars[6], *vars[8]));// pTbins vs Eavail
  //vars2D.push_back(new Variable2D(*vars[6], *vars[10]));// Wexp vs Eavail
  //vars2D.push_back(new Variable2D(*vars[11], *vars[10])); // Wexp vs q3
- vars2D.push_back(new Variable2D(*vars[9], *vars[9])); // q2 vs q0 (eHadronic)
+ //vars2D.push_back(new Variable2D(*vars[9], *vars[9])); // q2 vs q0 (eHadronic)
  /* // TODO: make 2D plots for cross-section
  vars2D.push_back(new Variable2D(*vars[6], *vars[9])); //pTmubins(y) vs Eavail
  vars2D.push_back(new Variable2D(*vars[7], *vars[9])); //pTmubins(y) vs RecoilE

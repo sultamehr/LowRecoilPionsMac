@@ -138,16 +138,16 @@ void LoopAndFillEventSelection(
   auto& cvUniv = error_bands["cv"].front();
 
   std::cout << "Starting MC reco loop...\n";
-  const int nEntries = chain->GetEntries(); // TODO: July 10 CHANGE BACK TO GETENTRIES
+  const int nEntries = 5000;// chain->GetEntries(); // TODO: July 10 CHANGE BACK TO GETENTRIES
   for (int i=0; i < nEntries; ++i)
   {
     if(i%1000==0) std::cout << i << " / " << nEntries << "\r" << std::flush;
     //std::cout << "Now Printing for Event " << i << std::endl;
-    MichelEvent cvEvent;
     cvUniv->SetEntry(i);
+    MichelEvent cvEvent;
     model.SetEntry(*cvUniv, cvEvent);
     const double cvWeight =model.GetWeight(*cvUniv, cvEvent);// TODO: Put this model weight back. model.GetWeight(*cvUniv, cvEvent);
-
+    //michelcuts.isMCSelected(*cvUniv, cvEvent, cvWeight);  // Hacking event loop so cutter doesn't screw up Michel Event for Vertical Universes 
     //=========================================
     // Systematics loop(s)
     //=========================================
@@ -156,33 +156,23 @@ void LoopAndFillEventSelection(
       std::vector<CVUniverse*> error_band_universes = band.second;
       for (auto universe : error_band_universes)
       {
-        //if (universe->ShortName() != "cv") continue;
-        MichelEvent myevent; // make sure your event is inside the error band loop. 
-        //if (universe->ShortName() != "cv") continue;
         // Tell the Event which entry in the TChain it's looking at
         universe->SetEntry(i);
+        //if (universe->ShortName() != "cv") continue;
+        MichelEvent myevent; // make sure your event is inside the error band loop. 
+        
+        //if(universe->IsVerticalOnly()) myevent = cvEvent; // Hacking event loop so cutter doesn't screw up Michel Event for Vertical Universes 
+        //if (universe->ShortName() != "cv") continue;
         const double weight2 = model.GetWeight(*universe, myevent); 
         const auto cutResults = michelcuts.isMCSelected(*universe, myevent, cvWeight);
         //const auto cutResults = michelcuts.isDataSelected(*universe, myevent);       
         //if (universe->ShortName() != "cv") continue;
 	if (!cutResults.all()) continue;
         if (cutResults.all()){
-	    //setDistanceMichelSelection(*universe, myevent, 150.);
-            //setClosestMichel(*universe, myevent,0);
-  	    //if (!myevent.m_nmichelspass.empty()){
-
+            //std::cout << "Universe Name: " << universe->ShortName() << " Weight is : " << weight2 << std::endl; 
+            
             for(auto& study: studies) study->SelectedSignal(*universe, myevent, weight2);
-
-
-            //} // End of if SelectedMichels Not Empty
-            /*else{
-    	
-                setDistanceMichelSidebands(*universe, myevent, 150., 500.);
-                setClosestMichel(*universe, myevent,1);
-	        if (!myevent.m_sidebandpass.empty()){
-                       for(auto& study: sideband_studies) study->SelectedSignal(*universe, myevent, weight2);
-	        } // else of if sidebandpass 
-            } */// end of else if (!cutResults[0] && evt.sideband == 1) // To fill Sideband Variables
+            	
         } // If event passes PreCuts
       } // End band's universe loop
     } // End Band loop
@@ -203,7 +193,7 @@ void LoopAndFillData( PlotUtils::ChainWrapper* data,
 
 {
   std::cout << "Starting data loop...\n";
-  const int nEntries = data->GetEntries(); // TODO: July 10 CHANGE BACK TO GEtENTRIES
+  const int nEntries = 5000; //data->GetEntries(); // TODO: July 10 CHANGE BACK TO GEtENTRIES
   for (int i=0; i <nEntries; ++i) {
     //std::cout << "Now Printing for Event " << i << std::endl;
     //for (auto universe : data_band) {
@@ -391,13 +381,17 @@ int main(const int argc, const char** argv)
   PlotUtils::MinervaUniverse::SetNuEConstraint(true);
   PlotUtils::MinervaUniverse::SetPlaylist(options.m_plist_string); //TODO: Infer this from the files somehow?
   PlotUtils::MinervaUniverse::SetAnalysisNuPDG(14);
-  PlotUtils::MinervaUniverse::SetNFluxUniverses(100);
+  PlotUtils::MinervaUniverse::SetNFluxUniverses(2);
   PlotUtils::MinervaUniverse::SetZExpansionFaReweight(false);
 
+
+  // For MnvTunev4.3.1 
+  //PlotUtils::MinervaUniverse::SetNonResPiReweight(true);
+  //PlotUtils::MinervaUniverse::SetDeuteriumGeniePiTune(true);
   PlotUtils::MinervaUniverse::SetReadoutVolume("Tracker");
   //PlotUtils::MinervaUniverse::SetMHRWeightNeutronCVReweight( true );
   //PlotUtils::MinervaUniverse::SetMHRWeightElastics( true );
-
+  
   //Now that we've defined what a cross section is, decide which sample and model
   //we're extracting a cross section for.
   PlotUtils::Cutter<CVUniverse, MichelEvent>::reco_t  preCuts;
@@ -452,27 +446,25 @@ int main(const int argc, const char** argv)
   MnvTunev1.emplace_back(new PlotUtils::MINOSEfficiencyReweighter<CVUniverse, MichelEvent>());
   MnvTunev1.emplace_back(new PlotUtils::RPAReweighter<CVUniverse, MichelEvent>());
   //TODO: Add my pion reweighter here. - Mehreen S.  Nov 22, 2021
-  //MnvTunev1.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>()); 
-  //PlotUtils::Model<CVUniverse, MichelEvent> model(std::move(MnvTunev1));
-  
-  
-  //std::vector<std::unique_ptr<PlotUtils::Reweighter<CVUniverse, MichelEvent>>> MnvTunev4;
-  //MnvTunev4.emplace_back(new PlotUtils::FluxAndCVReweighter<CVUniverse, MichelEvent>());
-  //MnvTunev4.emplace_back(new PlotUtils::GENIEReweighter<CVUniverse, MichelEvent>(true, true));
-  //MnvTunev4.emplace_back(new PlotUtils::LowRecoil2p2hReweighter<CVUniverse, MichelEvent>());
-  //MnvTunev4.emplace_back(new PlotUtils::MINOSEfficiencyReweighter<CVUniverse, MichelEvent>());
-  //MnvTunev4.emplace_back(new PlotUtils::RPAReweighter<CVUniverse, MichelEvent>());
-  //MnvTunev4.emplace_back(new PlotUtils::LowQ2PiReweighter<CVUniverse, MichelEvent>("MENU1PI"));
-  //MnvTunev4.emplace_back(new PlotUtils::DiffractiveReweighter<CVUniverse, MichelEvent>());
-  //MnvTunev4.emplace_back(new PlotUtils::GeantNeutronCVReweighter<CVUniverse, MichelEvent>());
-  //MnvTunev4.emplace_back(new PlotUtils::FSIReweighter<CVUniverse, MichelEvent>(true, true)); 
-  //Need to add Targetmass, COHPionWeight, GeantHadronWeight(is it only for Neutron?), MichelEfficiency
-  //MnvTunev4.emplace_back(new PlotUtils::COHPionReweighter<CVUniverse, MichelEvent>());
-  //MnvTunev4.emplace_back(new PlotUtils::TargetMassReweighter<CVUniverse, MichelEvent>());
-  //MnvTunev4.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>()); 
-
+  MnvTunev1.emplace_back(new PlotUtils::PionReweighter<CVUniverse,MichelEvent>()); 
   PlotUtils::Model<CVUniverse, MichelEvent> model(std::move(MnvTunev1));
+  
+  /*
+  std::vector<std::unique_ptr<PlotUtils::Reweighter<CVUniverse, MichelEvent>>> MnvTunev4;
+  MnvTunev4.emplace_back(new PlotUtils::FluxAndCVReweighter<CVUniverse, MichelEvent>());
+  MnvTunev4.emplace_back(new PlotUtils::GENIEReweighter<CVUniverse, MichelEvent>(true, true));
+  MnvTunev4.emplace_back(new PlotUtils::LowRecoil2p2hReweighter<CVUniverse, MichelEvent>());
+  MnvTunev4.emplace_back(new PlotUtils::MINOSEfficiencyReweighter<CVUniverse, MichelEvent>());
+  MnvTunev4.emplace_back(new PlotUtils::RPAReweighter<CVUniverse, MichelEvent>());
+  MnvTunev4.emplace_back(new PlotUtils::LowQ2PiReweighter<CVUniverse, MichelEvent>("MENU1PI"));
+  MnvTunev4.emplace_back(new PlotUtils::DiffractiveReweighter<CVUniverse, MichelEvent>());
+  MnvTunev4.emplace_back(new PlotUtils::GeantNeutronCVReweighter<CVUniverse, MichelEvent>());
+  MnvTunev4.emplace_back(new PlotUtils::FSIReweighter<CVUniverse, MichelEvent>(true, true));
+  MnvTunev4.emplace_back(new PlotUtils::COHPionReweighter<CVUniverse, MichelEvent>());
+  MnvTunev4.emplace_back(new PlotUtils::TargetMassReweighter<CVUniverse, MichelEvent>());  
 
+  PlotUtils::Model<CVUniverse, MichelEvent> model(std::move(MnvTunev4));
+  */
   // Make a map of systematic universes
   // Leave out systematics when making validation histograms
   const bool doSystematics = (getenv("MNV101_SKIP_SYST") == nullptr);
